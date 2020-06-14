@@ -5,20 +5,44 @@ using namespace qak;
 CharacterStream::CharacterStream(Source source) : source(source), index(0), end(source.buffer.size), spanStart(0) {
 }
 
+// Taken from https://www.cprogramming.com/tutorial/utf8.c
+#define isutf(c) (((c)&0xC0)!=0x80)
+
+static const u_int32_t utf8Offsets[6] = {
+    0x00000000UL, 0x00003080UL, 0x000E2080UL,
+    0x03C82080UL, 0xFA082080UL, 0x82082080UL
+};
+
+static u4 nextUtf8Character(const u1 *s, u4 *i)
+{
+    u4 ch = 0;
+    int sz = 0;
+
+    do {
+        ch <<= 6;
+        ch += s[(*i)++];
+        sz++;
+    } while (s[*i] && !isutf(s[*i]));
+    ch -= utf8Offsets[sz-1];
+
+    return ch;
+}
+
 bool CharacterStream::hasMore() {
     return index < end;
 }
 
-u1 CharacterStream::consume() {
-    return source.buffer.data[index++];
+u4 CharacterStream::consume() {
+    return nextUtf8Character(source.buffer.data, &index);
 }
 
 bool CharacterStream::match(const char *needleData, bool consume) {
     u4 needleLength = 0;
     const u1 *sourceData = source.buffer.data;
-    for (u4 i = 0, j = index; needleData[i] != 0; i++, j++, needleLength++) {
+    for (u4 i = 0, j = index; needleData[i] != 0; i++, j, needleLength++) {
         if (index >= end) return false;
-        if (needleData[i] != sourceData[j]) return false;
+        u4 c = nextUtf8Character(sourceData, &j);
+        if (needleData[i] != c) return false;
     }
     if (consume) index += needleLength;
     return true;
@@ -46,9 +70,10 @@ bool CharacterStream::matchHex(bool consume) {
 
 bool CharacterStream::matchIdentifierStart(bool consume) {
     if (!hasMore()) return false;
-    u1 c = source.buffer.data[index];
-    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
-        if (consume) index++;
+    u4 idx = index;
+    u4 c = nextUtf8Character(source.buffer.data, &idx);
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || c >= 0xc0) {
+        if (consume) index = idx;
         return true;
     }
     return false;
@@ -56,9 +81,10 @@ bool CharacterStream::matchIdentifierStart(bool consume) {
 
 bool CharacterStream::matchIdentifierPart(bool consume) {
     if (!hasMore()) return false;
-    u1 c = source.buffer.data[index];
-    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (c >= '0' && c <= '9')) {
-        if (consume) index++;
+    u4 idx = index;
+    u4 c = nextUtf8Character(source.buffer.data, &idx);
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (c >= '0' && c <= '9') || c >= 0x80) {
+        if (consume) index = idx;
         return true;
     }
     return false;
@@ -179,6 +205,8 @@ const char *qak::tokenTypeToString(TokenType type) {
             return "Null literal";
         case Identifier:
             return "Identifier";
+        case LastSimpleTokenType:
+            return "Last simple token type marker";
     }
     return nullptr;
 }
@@ -289,6 +317,7 @@ void qak::tokenize(Source source, Array<Token> &tokens, Array<Error> &errors) {
             type++;
         }
 
-        if (!foundSimple) ERROR("Unknown token", stream.endSpan());
+        if (!foundSimple)
+            ERROR("Unknown token", stream.endSpan());
     }
 }

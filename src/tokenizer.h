@@ -16,9 +16,9 @@ namespace qak {
 
         bool hasMore();
 
-        u1 peek();
+        u4 peek();
 
-        u1 consume();
+        u4 consume();
 
         bool match(const char *needle, bool consume);
 

@@ -1,6 +1,10 @@
+한자🥴
+
 123 123b 123s 123l 123.2 123.3f 123.4d
 
 'c'
+
+'\n'
 
 true
 
@@ -10,7 +14,7 @@ null
 
 _Some987Identifier
 
-"Hello world."
+"Hello world. 한자🥴"
 
 .
 
@@ -67,5 +71,3 @@ _Some987Identifier
 #
 
 ?
-
-
