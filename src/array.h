@@ -8,7 +8,7 @@ namespace qak {
     template<typename T>
     class Array {
     public:
-        Array(MemoryArea& mem) : mem(mem), size(0), capacity(0), buffer(nullptr) {
+        Array(MemoryArea &mem) : mem(mem), size(0), capacity(0), buffer(nullptr) {
         }
 
         Array(const Array &inArray) : size(inArray.size), capacity(inArray.capacity), buffer(NULL) {
@@ -119,7 +119,7 @@ namespace qak {
         inline int indexOf(const T &inValue) {
             for (u8 i = 0; i < size; ++i) {
                 if (buffer[i] == inValue) {
-                    return (int)i;
+                    return (int) i;
                 }
             }
 
@@ -155,7 +155,7 @@ namespace qak {
         }
 
     private:
-        MemoryArea& mem;
+        MemoryArea &mem;
         u8 size;
         u8 capacity;
         T *buffer;

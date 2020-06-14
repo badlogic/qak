@@ -22,7 +22,7 @@ namespace qak {
 
     public:
         ~MemoryArea() {
-            for (std::map<void*, Allocation>::iterator it = allocations.begin(); it != allocations.end(); it++) {
+            for (std::map<void *, Allocation>::iterator it = allocations.begin(); it != allocations.end(); it++) {
                 ::free(it->second.address);
             }
         }
@@ -32,7 +32,7 @@ namespace qak {
             u8 size = sizeof(T) * num;
             if (size == 0) return nullptr;
 
-            T *ptr = (T *) malloc(size);
+            T *ptr = (T *) ::malloc(size);
             allocations[(void *) ptr] = Allocation(ptr, size, file, line);
             return ptr;
         }
@@ -42,8 +42,8 @@ namespace qak {
             u8 size = sizeof(T) * num;
             if (size == 0) return nullptr;
 
-            T *ptr = (T *) malloc(size);
-            memset(ptr, 0, size);
+            T *ptr = (T *) ::malloc(size);
+            ::memset(ptr, 0, size);
             allocations[(void *) ptr] = Allocation(ptr, size, file, line);
             return ptr;
         }
@@ -55,12 +55,12 @@ namespace qak {
 
             T *result = nullptr;
             if (ptr == nullptr) {
-                result = malloc(size);
+                result = (T *) ::malloc(size);
             } else {
-                result = realloc(ptr, size);
+                result = (T *) ::realloc(ptr, size);
                 allocations.erase(ptr);
             }
-            allocations[(void *) ptr] = Allocation(ptr, size, file, line);
+            allocations[(void *) result] = Allocation(ptr, size, file, line);
             return result;
         }
 
@@ -86,8 +86,8 @@ namespace qak {
     };
 
     struct Buffer {
-        MemoryArea& mem;
-        u1* data;
+        MemoryArea &mem;
+        u1 *data;
         u8 size;
 
         void free() {
