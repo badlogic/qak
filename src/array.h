@@ -8,16 +8,7 @@ namespace qak {
     template<typename T>
     class Array {
     public:
-        Array(MemoryArea &mem) : mem(mem), size(0), capacity(0), buffer(nullptr) {
-        }
-
-        Array(const Array &inArray) : size(inArray.size), capacity(inArray.capacity), buffer(NULL) {
-            if (capacity > 0) {
-                buffer = allocate(capacity);
-                for (u8 i = 0; i < size; ++i) {
-                    construct(buffer + i, inArray.buffer[i]);
-                }
-            }
+        Array(HeapAllocator &mem) : mem(mem), size(0), capacity(0), buffer(nullptr) {
         }
 
         ~Array() {
@@ -155,7 +146,7 @@ namespace qak {
         }
 
     private:
-        MemoryArea &mem;
+        HeapAllocator &mem;
         u8 size;
         u8 capacity;
         T *buffer;

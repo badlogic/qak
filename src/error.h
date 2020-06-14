@@ -20,7 +20,7 @@ namespace qak {
 
         Span(Source source, u4 start, u4 end) : source(source), start(start), end(end) {}
 
-        const char *toCString(MemoryArea &mem) {
+        const char *toCString(HeapAllocator &mem) {
             u1 *sourceData = source.buffer.data;
             u4 size = end - start + 1;
             u1 *cString = mem.alloc<u1>(size, __FILE__, __LINE__);
@@ -29,8 +29,8 @@ namespace qak {
             return (const char *) cString;
         }
 
-        bool match(const char* str) {
-            u1* sourceData = source.buffer.data;
+        bool match(const char *str) {
+            u1 *sourceData = source.buffer.data;
             for (u4 i = start, j = 0; i < end && str[j] != 0; i++, j++) {
                 if (sourceData[i] != str[j]) return false;
             }

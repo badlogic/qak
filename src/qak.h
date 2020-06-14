@@ -3,6 +3,7 @@
 
 #include "array.h"
 #include "io.h"
+#include "map.h"
 #include "memory.h"
 #include "tokenizer.h"
 #include "types.h"

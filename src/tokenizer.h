@@ -93,7 +93,7 @@ namespace qak {
         TokenType type;
         Span span;
 
-        const char *toCString(MemoryArea &mem) {
+        const char *toCString(HeapAllocator &mem) {
             return span.toCString(mem);
         }
     };

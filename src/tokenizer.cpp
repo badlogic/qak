@@ -9,12 +9,11 @@ CharacterStream::CharacterStream(Source source) : source(source), index(0), end(
 #define isutf(c) (((c)&0xC0)!=0x80)
 
 static const u4 utf8Offsets[6] = {
-    0x00000000UL, 0x00003080UL, 0x000E2080UL,
-    0x03C82080UL, 0xFA082080UL, 0x82082080UL
+        0x00000000UL, 0x00003080UL, 0x000E2080UL,
+        0x03C82080UL, 0xFA082080UL, 0x82082080UL
 };
 
-static u4 nextUtf8Character(const u1 *s, u4 *i)
-{
+static u4 nextUtf8Character(const u1 *s, u4 *i) {
     u4 ch = 0;
     int sz = 0;
 
@@ -23,7 +22,7 @@ static u4 nextUtf8Character(const u1 *s, u4 *i)
         ch += s[(*i)++];
         sz++;
     } while (s[*i] && !isutf(s[*i]));
-    ch -= utf8Offsets[sz-1];
+    ch -= utf8Offsets[sz - 1];
 
     return ch;
 }
@@ -42,7 +41,7 @@ bool CharacterStream::match(const char *needleData, bool consume) {
     for (u4 i = 0, j = index; needleData[i] != 0; i++, needleLength++) {
         if (index >= end) return false;
         u4 c = nextUtf8Character(sourceData, &j);
-        if ((unsigned char)needleData[i] != c) return false;
+        if ((unsigned char) needleData[i] != c) return false;
     }
     if (consume) index += needleLength;
     return true;
@@ -316,7 +315,6 @@ void qak::tokenize(Source source, Array<Token> &tokens, Array<Error> &errors) {
             type++;
         }
 
-        if (!foundSimple)
-            ERROR("Unknown token", stream.endSpan());
+        if (!foundSimple) ERROR("Unknown token", stream.endSpan());
     }
 }
