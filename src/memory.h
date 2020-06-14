@@ -70,7 +70,7 @@ namespace qak {
                 ::free((void *) ptr);
                 allocations.erase(ptr);
             } else {
-                printf("%s:%i (address %p): Double free or not allocated through qak::memory\n", file, line, ptr);
+                printf("%s:%i (address %p): Double free or not allocated through qak::memory\n", file, line, (void*)ptr);
             }
         }
 

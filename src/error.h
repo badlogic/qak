@@ -31,7 +31,7 @@ namespace qak {
 
         bool match(const char* str) {
             u1* sourceData = source.buffer.data;
-            for (int i = start, j = 0; i < end && str[j] != 0; i++, j++) {
+            for (u4 i = start, j = 0; i < end && str[j] != 0; i++, j++) {
                 if (sourceData[i] != str[j]) return false;
             }
             return true;

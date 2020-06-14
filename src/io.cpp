@@ -3,7 +3,7 @@
 
 using namespace qak;
 
-Buffer qak::readFile(char *fileName, MemoryArea &mem) {
+Buffer qak::readFile(const char *fileName, MemoryArea &mem) {
     FILE *file = fopen(fileName, "rb");
     if (file == nullptr) {
         return {mem, nullptr, 0};

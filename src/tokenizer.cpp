@@ -39,10 +39,10 @@ u4 CharacterStream::consume() {
 bool CharacterStream::match(const char *needleData, bool consume) {
     u4 needleLength = 0;
     const u1 *sourceData = source.buffer.data;
-    for (u4 i = 0, j = index; needleData[i] != 0; i++, j, needleLength++) {
+    for (u4 i = 0, j = index; needleData[i] != 0; i++, needleLength++) {
         if (index >= end) return false;
         u4 c = nextUtf8Character(sourceData, &j);
-        if (needleData[i] != c) return false;
+        if ((unsigned char)needleData[i] != c) return false;
     }
     if (consume) index += needleLength;
     return true;
@@ -214,7 +214,6 @@ const char *qak::tokenTypeToString(TokenType type) {
 void qak::tokenize(Source source, Array<Token> &tokens, Array<Error> &errors) {
     CharacterStream stream(source);
 
-    outer:
     while (stream.hasMore()) {
         stream.skipWhiteSpace();
         if (!stream.hasMore()) break;
