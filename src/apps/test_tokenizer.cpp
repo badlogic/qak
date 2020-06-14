@@ -14,16 +14,12 @@ int main() {
     Array<Error> errors(mem);
     tokenize({file, "data/tokens.qak"}, tokens, errors);
 
+    QAK_CHECK(tokens.getSize() == 42, "Expected 42 tokens, got %d", tokens.getSize())
+    QAK_CHECK(errors.getSize() == 0, "Expected 0 errors, got %d", errors.getSize());
+
     for (u4 i = 0; i < tokens.getSize(); i++) {
         Token &token = tokens[i];
         printf("%s: %s\n", tokenTypeToString(token.type), token.toCString(mem));
-    }
-
-    if (errors.getSize()) {
-        for (u4 i = 0; i < errors.getSize(); i++) {
-            printf("Error: %s\n", errors[i].message);
-        }
-        return -1;
     }
 
     return 0;
