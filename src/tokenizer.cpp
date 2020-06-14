@@ -8,7 +8,7 @@ CharacterStream::CharacterStream(Source source) : source(source), index(0), end(
 // Taken from https://www.cprogramming.com/tutorial/utf8.c
 #define isutf(c) (((c)&0xC0)!=0x80)
 
-static const u_int32_t utf8Offsets[6] = {
+static const u4 utf8Offsets[6] = {
     0x00000000UL, 0x00003080UL, 0x000E2080UL,
     0x03C82080UL, 0xFA082080UL, 0x82082080UL
 };
