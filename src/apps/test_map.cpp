@@ -52,7 +52,7 @@ int main() {
             sumKeys += i;
             sumValues += i * 10;
         }
-        QAK_CHECK(intMap.getSize() == 10, "Expected map size to be 10, got %i", intMap.getSize());
+        QAK_CHECK(intMap.getSize() == 10, "Expected map size to be 10, got %llu", intMap.getSize());
 
         IntIntMap::MapEntries entries = intMap.getEntries();
         while (entries.hasNext()) {

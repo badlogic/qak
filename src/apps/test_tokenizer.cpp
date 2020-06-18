@@ -13,8 +13,8 @@ int main() {
     Array<Token> tokens(mem);
     Array<Error> errors(mem);
 
-    int iterations = 1000000;
-    for (int i = 0; i < iterations; i++) {
+    u4 iterations = 1000000;
+    for (u4 i = 0; i < iterations; i++) {
         tokens.clear();
         errors.clear();
         tokenize({file, "data/tokens.qak"}, tokens, errors);
@@ -27,8 +27,8 @@ int main() {
             printf("%s (%d:%d): %s\n", tokenTypeToString(token.type), token.span.start, token.span.end, token.toCString(mem));
         }*/
     }
-    double time = (qak::timeMillis() - start) / 1000.0;
-    double throughput = (double)file.size * iterations / time / 1024 / 1024;
+    f8 time = (qak::timeMillis() - start) / 1000.0;
+    f8 throughput = (f8) file.size * iterations / time / 1024 / 1024;
     printf("File size: %llu bytes\n", file.size);
     printf("Took %f\n", time);
     printf("Throughput %f MB/s\n", throughput);
