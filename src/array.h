@@ -8,7 +8,9 @@ namespace qak {
     template<typename T>
     class Array {
     public:
-        Array(HeapAllocator &mem) : mem(mem), size(0), capacity(0), buffer(nullptr) {
+        Array(HeapAllocator &mem, u8 capacity=0) : mem(mem), size(0), capacity(0), buffer(nullptr) {
+            if (capacity > 0)
+                ensureCapacity(capacity);
         }
 
         ~Array() {
