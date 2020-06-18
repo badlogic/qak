@@ -18,7 +18,7 @@ int main() {
 
     for (u4 i = 0; i < tokens.getSize(); i++) {
         Token &token = tokens[i];
-        printf("%s: %s\n", tokenTypeToString(token.type), token.toCString(mem));
+        printf("%s (%d:%d): %s\n", tokenTypeToString(token.type), token.span.start, token.span.end,  token.toCString(mem));
     }
 
     return 0;
