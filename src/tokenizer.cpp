@@ -2,9 +2,6 @@
 
 using namespace qak;
 
-CharacterStream::CharacterStream(Source source) : source(source), index(0), end(source.buffer.size), spanStart(0) {
-}
-
 // Taken from https://www.cprogramming.com/tutorial/utf8.c
 #define isutf(c) (((c)&0xC0)!=0x80)
 
@@ -25,6 +22,9 @@ static u4 nextUtf8Character(const u1 *s, u4 *i) {
     ch -= utf8Offsets[sz - 1];
 
     return ch;
+}
+
+CharacterStream::CharacterStream(Source source) : source(source), index(0), end(source.buffer.size), spanStart(0) {
 }
 
 bool CharacterStream::hasMore() {
@@ -272,6 +272,9 @@ void qak::tokenize(Source source, Array<Token> &tokens, Array<Error> &errors) {
                 if (stream.match("\"", true)) {
                     matchedEndQuote = true;
                     break;
+                }
+                if (stream.match("\n", false)) {
+                    ERROR("String literal is not closed by double quote", stream.endSpan());
                 }
                 stream.consume();
             }

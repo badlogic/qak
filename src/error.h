@@ -36,6 +36,23 @@ namespace qak {
             }
             return true;
         }
+
+        u4 getLength() {
+            return end - start;
+        }
+    };
+
+    struct Line {
+        Source source;
+        u4 start;
+        u4 end;
+        u4 line;
+
+        Line(Source source, u4 start, u4 end, u4 line) : source(source), start(start), end(end), line(line) {}
+
+        u4 getLength() {
+            return end - start;
+        }
     };
 
     struct Error {
@@ -43,6 +60,62 @@ namespace qak {
         Span span;
 
         Error(const char *message, Span span) : message(message), span(span) {}
+
+        Line getLine() {
+            s4 lineStart = span.start;
+            const u1 *sourceData = span.source.buffer.data;
+            while (true) {
+                if (lineStart < 0) break;
+                u1 c = sourceData[lineStart];
+                if (c == '\n') {
+                    lineStart = lineStart + 1;
+                    break;
+                }
+                lineStart--;
+            }
+            if (lineStart < 0) lineStart = 0;
+
+            s4 lineEnd = span.end;
+            while (true) {
+                if (lineEnd > (s4)span.source.buffer.size - 1) break;
+                u1 c = sourceData[lineEnd];
+                if (c == '\n') {
+                    break;
+                }
+                lineEnd++;
+            }
+
+            u4 lineNumber = 0;
+            u4 idx = lineStart;
+            while (idx > 0) {
+                char c = sourceData[idx];
+                if (c == '\n') {
+                    lineNumber++;
+                }
+                idx--;
+            }
+            lineNumber++;
+
+            return {span.source, (u4) lineStart, (u4) lineEnd, lineNumber};
+        }
+
+        void print() {
+            HeapAllocator mem;
+            Line line = getLine();
+            u1 *lineStr = mem.alloc<u1>(line.getLength() + 1, __FILE__, __LINE__);
+            memcpy(lineStr, line.source.buffer.data + line.start, line.getLength());
+            lineStr[line.getLength()] = 0;
+
+            printf("Error (%s:%i): %s\n\n", span.source.fileName, line.line, message);
+            printf("%s\n", lineStr);
+
+            s4 errorStart = span.start - line.start;
+            s4 errorEnd = errorStart + span.getLength();
+            for (s4 i = 0, n = line.getLength(); i < n; i++) {
+                bool useTab = (line.source.buffer.data + line.start)[i] == '\t';
+                printf("%s", i >= errorStart && i <= errorEnd ? "^" : (useTab ? "\t" : " "));
+            }
+        }
     };
 }
 
