@@ -20,8 +20,8 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    Array <Token> tokens(mem);
-    Array <Error> errors(mem);
+    Array<Token> tokens(mem);
+    Array<Error> errors(mem);
     tokenize({file, argv[1]}, tokens, errors);
 
     return 0;

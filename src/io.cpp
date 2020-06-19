@@ -28,5 +28,5 @@ Buffer qak::readFile(const char *fileName, HeapAllocator &mem) {
 u8 qak::timeMillis() {
     timeval time;
     gettimeofday(&time, NULL);
-    return u8(time.tv_sec) * 1000  +  u8(time.tv_usec / 1000);
+    return u8(time.tv_sec) * 1000 + u8(time.tv_usec / 1000);
 }

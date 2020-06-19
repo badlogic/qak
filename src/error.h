@@ -77,7 +77,7 @@ namespace qak {
 
             s4 lineEnd = span.end;
             while (true) {
-                if (lineEnd > (s4)span.source.buffer.size - 1) break;
+                if (lineEnd > (s4) span.source.buffer.size - 1) break;
                 u1 c = sourceData[lineEnd];
                 if (c == '\n') {
                     break;
