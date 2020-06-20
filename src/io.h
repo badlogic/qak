@@ -6,6 +6,7 @@
 namespace qak {
     namespace io {
         Buffer readFile(const char *fileName, HeapAllocator &mem);
+
         u8 timeMillis();
     };
 }

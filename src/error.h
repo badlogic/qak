@@ -11,7 +11,7 @@ namespace qak {
         Span span;
         const char *message;
 
-        Error(Span span, const char *message) : span(span),  message(message) {}
+        Error(Span span, const char *message) : span(span), message(message) {}
 
         Line getLine() {
             if (span.start == 0 && span.end == 0) {
@@ -80,17 +80,17 @@ namespace qak {
         HeapAllocator &mem;
         Array<Error> errors;
 
-        Errors(HeapAllocator &mem): mem(mem), errors(mem) {}
+        Errors(HeapAllocator &mem) : mem(mem), errors(mem) {}
 
         void add(Error error) {
             errors.add(error);
         }
 
-        void add(Span span, const char* msg...) {
+        void add(Span span, const char *msg...) {
             va_list args;
             va_start(args, msg);
 
-            char* buffer = mem.alloc<char>(1024, __FILE__, __LINE__);
+            char *buffer = mem.alloc<char>(1024, __FILE__, __LINE__);
             int len = vsnprintf(buffer, 1024, msg, args);
             if (len > 1024) {
                 mem.free(buffer, __FILE__, __LINE__);

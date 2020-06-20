@@ -15,7 +15,7 @@ void testModule() {
 
     Parser parser(mem);
     Errors errors(mem);
-    Module* module = parser.parse(source, errors);
+    Module *module = parser.parse(source, errors);
     QAK_CHECK(module, "Expected module, got nullptr.");
 }
 
@@ -28,7 +28,7 @@ void testModuleVariable() {
 
     Parser parser(mem);
     Errors errors(mem);
-    Module* module = parser.parse(source, errors);
+    Module *module = parser.parse(source, errors);
     if (errors.hasErrors()) errors.print();
     QAK_CHECK(module, "Expected module, got nullptr.");
 

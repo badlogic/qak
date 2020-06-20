@@ -90,10 +90,10 @@ namespace qak {
         TokenType type;
         Span span;
 
-        bool match(const char* needle) {
+        bool match(const char *needle) {
             size_t len = strlen(needle);
             if (span.getLength() != len) return false;
-            const u1* sourceData = span.source.buffer.data + span.start;
+            const u1 *sourceData = span.source.buffer.data + span.start;
             for (u4 i = 0; i < len; i++) {
                 if (sourceData[i] != needle[i]) return false;
             }

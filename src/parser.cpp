@@ -217,16 +217,16 @@ Expression *Parser::parseUnaryOperator(TokenStream &stream, Errors &errors) {
         op++;
     }
     if (*op != OPERATOR_END) {
-        Token* op = stream.consume();
-        Expression* expression = parseUnaryOperator(stream, errors);
+        Token *op = stream.consume();
+        Expression *expression = parseUnaryOperator(stream, errors);
         if (!expression) return nullptr;
-        UnaryOperation* operation = new (QAK_ALLOC(UnaryOperation)) UnaryOperation(op->span, expression);
+        UnaryOperation *operation = new(QAK_ALLOC(UnaryOperation)) UnaryOperation(op->span, expression);
         return operation;
     } else {
-        if(stream.match("(", true)) {
-            Expression* expression = parseExpression(stream, errors);
+        if (stream.match("(", true)) {
+            Expression *expression = parseExpression(stream, errors);
             if (!expression) return nullptr;
-            if(!stream.expect(")")) return nullptr;
+            if (!stream.expect(")")) return nullptr;
             return expression;
         } else {
             return parseAccessOrCallOrLiteral(stream, errors);
@@ -247,7 +247,7 @@ Expression *Parser::parseAccessOrCallOrLiteral(TokenStream &stream, Errors &erro
         stream.match(CharacterLiteral, false) ||
         stream.match(NullLiteral, false)) {
         Token *token = stream.consume();
-        Literal* literal = new (QAK_ALLOC(Literal)) Literal(token->type, token->span);
+        Literal *literal = new(QAK_ALLOC(Literal)) Literal(token->type, token->span);
         return literal;
     } else if (stream.match(Identifier, false)) {
         return parseAccessOrCall(stream, errors);
