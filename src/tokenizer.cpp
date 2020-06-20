@@ -122,7 +122,7 @@ bool CharacterStream::isSpanEmpty() {
     return spanStart == index;
 }
 
-const char *qak::tokenTypeToString(TokenType type) {
+const char *tokenizer::tokenTypeToString(TokenType type) {
     switch (type) {
         case Period:
             return ".";
@@ -210,7 +210,7 @@ const char *qak::tokenTypeToString(TokenType type) {
     return nullptr;
 }
 
-void qak::tokenize(Source source, Array<Token> &tokens, Array<Error> &errors) {
+void tokenizer::tokenize(Source source, Array<Token> &tokens, Errors &errors) {
     CharacterStream stream(source);
 
     while (stream.hasMore()) {
@@ -231,13 +231,13 @@ void qak::tokenize(Source source, Array<Token> &tokens, Array<Error> &errors) {
                 }
             }
             if (stream.match("b", true)) {
-                if (type == FloatLiteral) ERROR("Byte literal can not have a decimal point.", stream.endSpan());
+                if (type == FloatLiteral) ERROR(stream.endSpan(), "Byte literal can not have a decimal point.");
                 type = ByteLiteral;
             } else if (stream.match("s", true)) {
-                if (type == FloatLiteral) ERROR("Short literal can not have a decimal point.", stream.endSpan());
+                if (type == FloatLiteral) ERROR(stream.endSpan(), "Short literal can not have a decimal point.");
                 type = ShortLiteral;
             } else if (stream.match("l", true)) {
-                if (type == FloatLiteral) ERROR("Long literal can not have a decimal point.", stream.endSpan());
+                if (type == FloatLiteral) ERROR(stream.endSpan(), "Long literal can not have a decimal point.");
                 type = LongLiteral;
             } else if (stream.match("f", true)) {
                 type = FloatLiteral;
@@ -255,7 +255,7 @@ void qak::tokenize(Source source, Array<Token> &tokens, Array<Error> &errors) {
             // Note: escape sequences like \n are parsed in the AST
             stream.match("\\", true);
             stream.consume();
-            if (!stream.match("'", true)) ERROR("Expected closing ' for character literal.", stream.endSpan());
+            if (!stream.match("'", true)) ERROR(stream.endSpan(), "Expected closing ' for character literal.");
             tokens.add({CharacterLiteral, stream.endSpan()});
             continue;
         }
@@ -274,11 +274,11 @@ void qak::tokenize(Source source, Array<Token> &tokens, Array<Error> &errors) {
                     break;
                 }
                 if (stream.match("\n", false)) {
-                    ERROR("String literal is not closed by double quote", stream.endSpan());
+                    ERROR(stream.endSpan(), "String literal is not closed by double quote");
                 }
                 stream.consume();
             }
-            if (!matchedEndQuote) ERROR("String literal is not closed by double quote", stream.endSpan());
+            if (!matchedEndQuote) ERROR(stream.endSpan(), "String literal is not closed by double quote");
             Span stringSpan = stream.endSpan();
             tokens.add({StringLiteral, Span(stringSpan.source, stringSpan.start - 1, stringSpan.end)});
             continue;
@@ -318,6 +318,6 @@ void qak::tokenize(Source source, Array<Token> &tokens, Array<Error> &errors) {
             type++;
         }
 
-        if (!foundSimple) ERROR("Unknown token", stream.endSpan());
+        if (!foundSimple) ERROR(stream.endSpan(), "Unknown token");
     }
 }

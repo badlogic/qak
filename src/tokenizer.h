@@ -2,7 +2,6 @@
 #define QAK_TOKENIZER_H
 
 #include "array.h"
-#include "memory.h"
 #include "error.h"
 
 namespace qak {
@@ -87,18 +86,30 @@ namespace qak {
         Identifier
     };
 
-    const char *tokenTypeToString(TokenType type);
-
     struct Token {
         TokenType type;
         Span span;
+
+        bool match(const char* needle) {
+            size_t len = strlen(needle);
+            if (span.getLength() != len) return false;
+            const u1* sourceData = span.source.buffer.data + span.start;
+            for (u4 i = 0; i < len; i++) {
+                if (sourceData[i] != needle[i]) return false;
+            }
+            return true;
+        }
 
         const char *toCString(HeapAllocator &mem) {
             return span.toCString(mem);
         }
     };
 
-    void tokenize(Source, Array<Token> &tokens, Array<Error> &errors);
+    namespace tokenizer {
+        void tokenize(Source, Array<Token> &tokens, Errors &errors);
+
+        const char *tokenTypeToString(TokenType type);
+    };
 }
 
 #endif //QAK_TOKENIZER_H

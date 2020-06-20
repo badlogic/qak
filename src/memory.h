@@ -6,6 +6,7 @@
 
 // Default block size of the BumpAllocator
 #define QAK_BLOCK_SIZE (512 * 1024)
+#define QAK_ALLOC(type) mem.alloc<type>(1, __FILE__, __LINE__)
 
 namespace qak {
     struct Allocation {

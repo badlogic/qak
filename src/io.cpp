@@ -4,7 +4,7 @@
 
 using namespace qak;
 
-Buffer qak::readFile(const char *fileName, HeapAllocator &mem) {
+Buffer io::readFile(const char *fileName, HeapAllocator &mem) {
     FILE *file = fopen(fileName, "rb");
     if (file == nullptr) {
         fclose(file);
@@ -25,7 +25,7 @@ Buffer qak::readFile(const char *fileName, HeapAllocator &mem) {
     return {mem, content, size};
 }
 
-u8 qak::timeMillis() {
+u8 io::timeMillis() {
     timeval time;
     gettimeofday(&time, NULL);
     return u8(time.tv_sec) * 1000 + u8(time.tv_usec / 1000);

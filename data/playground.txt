@@ -1,0 +1,87 @@
+// Possible syntax and semantic playground
+
+module math
+
+type Point
+	x: f32
+	y: f32
+end
+
+fun add(p1: Point, p2: Point): Point
+	return Point(p1.x + p2.x, p1.y + p2.y)
+end
+
+var p1 = new Point(0, 10)        // ref Point
+var p2 = Point(0, 10)            // Point
+var p3 = add(p1, p2)             // Point
+var p4 = new Point(add(p1, p2))  // ref Point
+var p4 = Point(0, 0)
+p3 = p1                          // ref assigned to val -> copy
+p1 = p2                          // val assigned to ref -> copy
+p4 = p1                          // ref assigned to ref ->
+
+type String
+	_bytes: i8[]
+
+	fun String(other: String)
+		bytes = other.bytes
+	end
+
+	fun String(bytes: i8[])
+		self.bytes = std.copy(bytes)
+	end
+
+	fun numBytes(): i32
+		return bytes.length
+	end
+
+	fun bytes(): i8[]
+		return bytes.copy()
+	end
+end
+
+type StringIterator
+	_str: String
+end
+
+type Callbacks
+	start: (msg: String)
+	update: (msg: String)
+end
+
+type List<T>
+	items: T[] // arrays are always a ref
+	size: i32
+	capacity: i32
+end
+
+type Node<T>
+	next: ref Node
+	value: T
+end
+
+type AstNode
+	If | While | Return
+end
+
+var node = new If()
+
+fun print(node: AstNode) // can take val and ref of AstNode
+	match(node)
+		If:
+		While:
+		Return:
+end
+
+fun print(node: ref AstNode) // can take ref of AstNode, but not val of AstNode
+
+end
+
+// syntactic sugar for
+type AstNodeVariant
+	type: ref Type
+	isRef: boolean
+	value: ... a value or ref ...
+end
+
+

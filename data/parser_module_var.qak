@@ -1,0 +1,4 @@
+module test
+
+var foo: i32
+var bar = 234 + 3 * 5

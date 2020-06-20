@@ -22,13 +22,17 @@ add_executable(qak ${INCLUDES} "src/apps/qak.cpp")
 target_link_libraries(qak LINK_PUBLIC qak-lib)
 
 include_directories(src/apps)
-add_executable(test_tokenizer ${INCLUDES} "src/apps/test_tokenizer.cpp")
-target_link_libraries(test_tokenizer LINK_PUBLIC qak-lib)
-
-include_directories(src/apps)
 add_executable(test_memory ${INCLUDES} "src/apps/test_memory.cpp")
 target_link_libraries(test_memory LINK_PUBLIC qak-lib)
 
 include_directories(src/apps)
 add_executable(test_map ${INCLUDES} "src/apps/test_map.cpp")
 target_link_libraries(test_map LINK_PUBLIC qak-lib)
+
+include_directories(src/apps)
+add_executable(test_tokenizer ${INCLUDES} "src/apps/test_tokenizer.cpp")
+target_link_libraries(test_tokenizer LINK_PUBLIC qak-lib)
+
+include_directories(src/apps)
+add_executable(test_parser ${INCLUDES} "src/apps/test_parser.cpp")
+target_link_libraries(test_parser LINK_PUBLIC qak-lib)

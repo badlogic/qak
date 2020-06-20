@@ -1,7 +1,6 @@
 #ifndef QAK_ARRAY_H
 #define QAK_ARRAY_H
 
-#include "types.h"
 #include "memory.h"
 
 namespace qak {
