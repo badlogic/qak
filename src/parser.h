@@ -6,39 +6,6 @@
 #include "tokenizer.h"
 
 namespace qak {
-    struct TokenStream {
-        Source source;
-        Array<Token> &tokens;
-        Errors &errors;
-        int index;
-        int end;
-
-        TokenStream(Source source, Array<Token> &tokens, Errors &errors) : source(source), tokens(tokens), errors(errors), index(0), end(tokens.getSize()) {}
-
-        /** Returns whether there are more tokens in the stream. **/
-        bool hasMore();
-
-        /** Consumes the next token and returns it. **/
-        Token *consume();
-
-        /** Returns the current token or null. **/
-        Token *peek();
-
-        /** Checks if the next token has the give type and optionally consumes, or throws an error if the next token did not match the
-         * type. */
-        Token *expect(TokenType type);
-
-        /** Checks if the next token matches the given text and optionally consumes, or throws an error if the next token did not match
-         * the text. */
-        Token *expect(const char *text);
-
-        /** Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
-        bool match(TokenType type, bool consume);
-
-        /** Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
-        bool match(const char *text, bool consume);
-    };
-
     namespace ast {
 #define QAK_AST_INDENT 3
 
