@@ -112,7 +112,7 @@ namespace qak {
         int index;
         int end;
 
-        TokenStream(Source source, Array<Token> &tokens, Errors &errors) : source(source), tokens(tokens), errors(errors), index(0), end(tokens.getSize()) {}
+        TokenStream(Source source, Array<Token> &tokens, Errors &errors) : source(source), tokens(tokens), errors(errors), index(0), end(tokens.size()) {}
 
         /** Returns whether there are more tokens in the stream. **/
         bool hasMore();

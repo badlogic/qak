@@ -1,0 +1,17 @@
+module test
+
+fun empty()
+end
+
+fun emptyReturn(): i32
+end
+
+fun oneArg(a: i32)
+end
+
+fun argsAndReturn(a: i32, b: i32): i32
+end
+
+fun foo(a: i32, b: i32): i32
+    var result = 1 + 2 * 3 / 4
+end

@@ -5,64 +5,127 @@ using namespace qak;
 using namespace qak::ast;
 
 Module *Parser::parse(Source source, Errors &errors) {
-    currentSource = &source;
+    _source = &source;
+    _errors = &errors;
 
-    Array<Token> tokens(mem);
+    Array<Token> tokens(_mem);
     tokenizer::tokenize(source, tokens, errors);
-    if (errors.hasErrors()) return nullptr;
-
+    if (_errors->hasErrors()) return nullptr;
 
     TokenStream stream(source, tokens, errors);
-    Module *module = parseModule(stream, errors);
+    _stream = &stream;
+
+    Module *module = parseModule();
     if (!module) return nullptr;
 
-    while (stream.hasMore()) {
-        if (!parseStatement(stream, module, errors)) return nullptr;
+    while (_stream->hasMore()) {
+        if (_stream->match("fun", false)) {
+            Function *function = parseFunction();
+            if (!function) return nullptr;
+
+            module->functions.add(function);
+        } else {
+            Statement *statement = parseStatement();
+            if (!statement) return nullptr;
+
+            if (statement->astType == AstVariable) module->variables.add(static_cast<Variable *>(statement));
+            module->statements.add(statement);
+        }
     }
     return module;
 }
 
-Module *Parser::parseModule(TokenStream &stream, Errors &errors) {
-    Token *moduleKeyword = stream.expect("module");
+Module *Parser::parseModule() {
+    Token *moduleKeyword = _stream->expect("module");
     if (!moduleKeyword) return nullptr;
 
-    Token *moduleName = stream.expect(Identifier);
+    Token *moduleName = _stream->expect(Identifier);
     if (!moduleName) return nullptr;
 
-    Module *module = new(QAK_ALLOC(Module)) Module(moduleName->span, mem);
+    Module *module = new(QAK_ALLOC(Module)) Module(moduleName->span, _mem);
     return module;
 }
 
-AstNode *Parser::parseStatement(TokenStream &stream, Module *module, Errors &errors) {
-    if (stream.match("var", false)) {
-        Variable *variable = parseVariable(stream, errors);
+Function *Parser::parseFunction() {
+    _stream->expect("fun");
+
+    Token *name = _stream->expect(Identifier);
+    if (!name) return nullptr;
+
+    Array<Parameter *> parameters(_mem);
+    if (!parseParameters(parameters)) return nullptr;
+
+    TypeSpecifier *returnType = nullptr;
+    if (_stream->match(":", true)) {
+        returnType = parseTypeSpecifier();
+        if (!returnType) return nullptr;
+    }
+
+    Array<Statement *> statements(_mem);
+    while (_stream->hasMore() && !_stream->match("end", false)) {
+        Statement *statement = parseStatement();
+        if (!statement) return nullptr;
+        statements.add(statement);
+    }
+
+    if (!_stream->expect("end")) return nullptr;
+
+    Function *function = new(QAK_ALLOC(Function)) Function(name->span, parameters, returnType, statements, _mem);
+    return function;
+}
+
+bool Parser::parseParameters(Array<Parameter *> &parameters) {
+    if (!_stream->expect("(")) return false;
+
+    while (_stream->match(Identifier, false)) {
+        Parameter *parameter = parseParameter();
+        if (!parameter) return false;
+
+        parameters.add(parameter);
+
+        if (!_stream->match(",", true)) break;
+    }
+
+    return _stream->expect(")");
+}
+
+ast::Parameter *Parser::parseParameter() {
+    Token *name = _stream->consume();
+    if (!_stream->expect(":")) return nullptr;
+    TypeSpecifier *type = parseTypeSpecifier();
+    if (!type) return nullptr;
+
+    Parameter *parameter = new(QAK_ALLOC(Parameter)) Parameter(name->span, type);
+    return parameter;
+}
+
+Statement *Parser::parseStatement() {
+    if (_stream->match("var", false)) {
+        Variable *variable = parseVariable();
         if (!variable) return nullptr;
-        module->variables.add(variable);
         return variable;
     } else {
-        if (stream.hasMore())
-            errors.add(stream.consume()->span, "Unknown statement.");
-        else
-            errors.add({*currentSource, 0, 0}, "Unknown error.");
-        return nullptr;
+        Expression *expression = parseExpression();
+        if (!expression) return nullptr;
+        return expression;
     }
 }
 
-Variable *Parser::parseVariable(TokenStream &stream, Errors &errors) {
-    stream.expect("var");
+Variable *Parser::parseVariable() {
+    _stream->expect("var");
 
-    Token *name = stream.expect(Identifier);
+    Token *name = _stream->expect(Identifier);
     if (!name) return nullptr;
 
     TypeSpecifier *type = nullptr;
-    if (stream.match(":", true)) {
-        type = parseTypeSpecifier(stream, errors);
+    if (_stream->match(":", true)) {
+        type = parseTypeSpecifier();
         if (!type) return nullptr;
     }
 
     Expression *expression = nullptr;
-    if (stream.match("=", true)) {
-        expression = parseExpression(stream, errors);
+    if (_stream->match("=", true)) {
+        expression = parseExpression();
         if (!expression) return nullptr;
     }
 
@@ -70,27 +133,27 @@ Variable *Parser::parseVariable(TokenStream &stream, Errors &errors) {
     return variable;
 }
 
-TypeSpecifier *Parser::parseTypeSpecifier(TokenStream &stream, Errors &errors) {
-    Token *name = stream.expect(Identifier);
+TypeSpecifier *Parser::parseTypeSpecifier() {
+    Token *name = _stream->expect(Identifier);
     if (!name) return nullptr;
 
     TypeSpecifier *type = new(QAK_ALLOC(TypeSpecifier)) TypeSpecifier(name->span);
     return type;
 }
 
-Expression *Parser::parseExpression(TokenStream &stream, Errors &errors) {
-    return parseTernaryOperator(stream, errors);
+Expression *Parser::parseExpression() {
+    return parseTernaryOperator();
 }
 
-Expression *Parser::parseTernaryOperator(TokenStream &stream, Errors &errors) {
-    Expression *condition = parseBinaryOperator(stream, errors, 0);
+Expression *Parser::parseTernaryOperator() {
+    Expression *condition = parseBinaryOperator(0);
     if (!condition) return nullptr;
 
-    if (stream.match("?", true)) {
-        Expression *trueValue = parseTernaryOperator(stream, errors);
+    if (_stream->match("?", true)) {
+        Expression *trueValue = parseTernaryOperator();
         if (!trueValue) return nullptr;
-        if (!stream.match(":", true)) return nullptr;
-        Expression *falseValue = parseTernaryOperator(stream, errors);
+        if (!_stream->match(":", true)) return nullptr;
+        Expression *falseValue = parseTernaryOperator();
         if (!falseValue) return nullptr;
         TernaryOperation *ternary = new(QAK_ALLOC(TernaryOperation)) TernaryOperation(condition, trueValue, falseValue);
         return ternary;
@@ -111,22 +174,22 @@ static TokenType binaryOperators[OPERATOR_NUM_GROUPS][5] = {
         {ForwardSlash, Asterisk,  Percentage, OPERATOR_END}
 };
 
-Expression *Parser::parseBinaryOperator(TokenStream &stream, Errors &errors, u4 level) {
+Expression *Parser::parseBinaryOperator(u4 level) {
     int nextLevel = level + 1;
 
-    Expression *left = nextLevel == OPERATOR_NUM_GROUPS ? parseUnaryOperator(stream, errors) : parseBinaryOperator(stream, errors, nextLevel);
+    Expression *left = nextLevel == OPERATOR_NUM_GROUPS ? parseUnaryOperator() : parseBinaryOperator(nextLevel);
     if (!left) return nullptr;
 
-    TokenType *op = binaryOperators[level];
-    while (stream.hasMore()) {
+    while (_stream->hasMore()) {
+        TokenType *op = binaryOperators[level];
         while (*op != OPERATOR_END) {
-            if (stream.match(*op, false)) break;
+            if (_stream->match(*op, false)) break;
             op++;
         }
         if (*op == OPERATOR_END) break;
 
-        Token *opToken = stream.consume();
-        Expression *right = nextLevel == OPERATOR_NUM_GROUPS ? parseUnaryOperator(stream, errors) : parseBinaryOperator(stream, errors, nextLevel);
+        Token *opToken = _stream->consume();
+        Expression *right = nextLevel == OPERATOR_NUM_GROUPS ? parseUnaryOperator() : parseBinaryOperator(nextLevel);
         if (right == nullptr) return nullptr;
 
         left = new(QAK_ALLOC(BinaryOperation)) BinaryOperation(opToken->span, left, right);
@@ -136,54 +199,54 @@ Expression *Parser::parseBinaryOperator(TokenStream &stream, Errors &errors, u4 
 
 static TokenType unaryOperators[] = {Not, Plus, Minus, OPERATOR_END};
 
-Expression *Parser::parseUnaryOperator(TokenStream &stream, Errors &errors) {
+Expression *Parser::parseUnaryOperator() {
     TokenType *op = unaryOperators;
     while (*op != OPERATOR_END) {
-        if (stream.match(*op, false)) break;
+        if (_stream->match(*op, false)) break;
         op++;
     }
     if (*op != OPERATOR_END) {
-        Token *op = stream.consume();
-        Expression *expression = parseUnaryOperator(stream, errors);
+        Token *op = _stream->consume();
+        Expression *expression = parseUnaryOperator();
         if (!expression) return nullptr;
         UnaryOperation *operation = new(QAK_ALLOC(UnaryOperation)) UnaryOperation(op->span, expression);
         return operation;
     } else {
-        if (stream.match("(", true)) {
-            Expression *expression = parseExpression(stream, errors);
+        if (_stream->match("(", true)) {
+            Expression *expression = parseExpression();
             if (!expression) return nullptr;
-            if (!stream.expect(")")) return nullptr;
+            if (!_stream->expect(")")) return nullptr;
             return expression;
         } else {
-            return parseAccessOrCallOrLiteral(stream, errors);
+            return parseAccessOrCallOrLiteral();
         }
     }
     return nullptr;
 }
 
-Expression *Parser::parseAccessOrCallOrLiteral(TokenStream &stream, Errors &errors) {
-    if (stream.match(StringLiteral, false) ||
-        stream.match(BooleanLiteral, false) ||
-        stream.match(DoubleLiteral, false) ||
-        stream.match(FloatLiteral, false) ||
-        stream.match(ByteLiteral, false) ||
-        stream.match(ShortLiteral, false) ||
-        stream.match(IntegerLiteral, false) ||
-        stream.match(LongLiteral, false) ||
-        stream.match(CharacterLiteral, false) ||
-        stream.match(NullLiteral, false)) {
-        Token *token = stream.consume();
+Expression *Parser::parseAccessOrCallOrLiteral() {
+    if (_stream->match(StringLiteral, false) ||
+        _stream->match(BooleanLiteral, false) ||
+        _stream->match(DoubleLiteral, false) ||
+        _stream->match(FloatLiteral, false) ||
+        _stream->match(ByteLiteral, false) ||
+        _stream->match(ShortLiteral, false) ||
+        _stream->match(IntegerLiteral, false) ||
+        _stream->match(LongLiteral, false) ||
+        _stream->match(CharacterLiteral, false) ||
+        _stream->match(NullLiteral, false)) {
+        Token *token = _stream->consume();
         Literal *literal = new(QAK_ALLOC(Literal)) Literal(token->type, token->span);
         return literal;
-    } else if (stream.match(Identifier, false)) {
-        return parseAccessOrCall(stream, errors);
+    } else if (_stream->match(Identifier, false)) {
+        return parseAccessOrCall();
     } else {
-        errors.add(stream.peek()->span, "Expected a variable, field, array, function call, method call, or literal.");
+        _errors->add(_stream->peek()->span, "Expected a variable, field, array, function call, method call, or literal.");
         return nullptr;
     }
 }
 
-Expression *Parser::parseAccessOrCall(TokenStream &stream, Errors &errors) {
-    errors.add(stream.peek()->span, "Parsing of variable access or call not implemented.");
+Expression *Parser::parseAccessOrCall() {
+    _errors->add(_stream->peek()->span, "Parsing of variable access or call not implemented.");
     return nullptr;
 }

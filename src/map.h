@@ -46,10 +46,10 @@ namespace qak {
 
             bool hasNext() {
                 while (true) {
-                    if (index >= entries.getSize()) return false;
+                    if (index >= entries.size()) return false;
                     if (nextEntry == nullptr) {
                         index++;
-                        if (index < entries.getSize()) nextEntry = entries[index];
+                        if (index < entries.size()) nextEntry = entries[index];
                         continue;
                     }
                     return true;
@@ -72,7 +72,7 @@ namespace qak {
         }
 
         ~Map() {
-            for (u8 i = 0; i < entries.getSize(); i++) {
+            for (u8 i = 0; i < entries.size(); i++) {
                 MapEntry<K, V> *entry = entries[i];
                 while (entry != nullptr) {
                     MapEntry<K, V> *next = entry->next;
@@ -83,7 +83,7 @@ namespace qak {
         }
 
         void put(const K &key, const V &value) {
-            u8 hash = hashFunc(key) % entries.getSize();
+            u8 hash = hashFunc(key) % entries.size();
             MapEntry<K, V> *entry = entries[hash];
             size++;
 
@@ -111,7 +111,7 @@ namespace qak {
         }
 
         MapEntry<K, V> *get(const K &key) {
-            u8 hash = hashFunc(key) % entries.getSize();
+            u8 hash = hashFunc(key) % entries.size();
             MapEntry<K, V> *entry = entries[hash];
             while (entry != nullptr) {
                 if (equalsFunc(key, entry->key)) break;
@@ -121,7 +121,7 @@ namespace qak {
         }
 
         void remove(const K &key) {
-            u8 hash = hashFunc(key) % entries.getSize();
+            u8 hash = hashFunc(key) % entries.size();
             MapEntry<K, V> *prevEntry = nullptr;
             MapEntry<K, V> *entry = entries[hash];
             while (entry != nullptr) {

@@ -6,7 +6,7 @@
 
 // Default block size of the BumpAllocator
 #define QAK_BLOCK_SIZE (512 * 1024)
-#define QAK_ALLOC(type) mem.alloc<type>(1, __FILE__, __LINE__)
+#define QAK_ALLOC(type) _mem.alloc<type>(1, __FILE__, __LINE__)
 
 namespace qak {
     struct Allocation {
@@ -22,11 +22,11 @@ namespace qak {
 
     struct HeapAllocator {
     private:
-        std::map<void *, Allocation> allocations;
+        std::map<void *, Allocation> _allocations;
 
     public:
         ~HeapAllocator() {
-            for (std::map<void *, Allocation>::iterator it = allocations.begin(); it != allocations.end(); it++) {
+            for (std::map<void *, Allocation>::iterator it = _allocations.begin(); it != _allocations.end(); it++) {
                 ::free(it->second.address);
             }
         }
@@ -37,7 +37,7 @@ namespace qak {
             if (size == 0) return nullptr;
 
             T *ptr = (T *) ::malloc(size);
-            allocations[(void *) ptr] = Allocation(ptr, size, file, line);
+            _allocations[(void *) ptr] = Allocation(ptr, size, file, line);
             return ptr;
         }
 
@@ -48,7 +48,7 @@ namespace qak {
 
             T *ptr = (T *) ::malloc(size);
             ::memset(ptr, 0, size);
-            allocations[(void *) ptr] = Allocation(ptr, size, file, line);
+            _allocations[(void *) ptr] = Allocation(ptr, size, file, line);
             return ptr;
         }
 
@@ -62,25 +62,25 @@ namespace qak {
                 result = (T *) ::malloc(size);
             } else {
                 result = (T *) ::realloc(ptr, size);
-                allocations.erase(ptr);
+                _allocations.erase(ptr);
             }
-            allocations[(void *) result] = Allocation(ptr, size, file, line);
+            _allocations[(void *) result] = Allocation(ptr, size, file, line);
             return result;
         }
 
         template<typename T>
         void free(T *ptr, const char *file, u4 line) {
-            if (allocations.count(ptr)) {
+            if (_allocations.count(ptr)) {
                 ::free((void *) ptr);
-                allocations.erase(ptr);
+                _allocations.erase(ptr);
             } else {
                 printf("%s:%i (address %p): Double free or not allocated through qak::memory\n", file, line, (void *) ptr);
             }
         }
 
         void printAllocations() {
-            if (allocations.size() > 0) {
-                for (std::map<void *, Allocation>::iterator it = allocations.begin(); it != allocations.end(); it++) {
+            if (_allocations.size() > 0) {
+                for (std::map<void *, Allocation>::iterator it = _allocations.begin(); it != _allocations.end(); it++) {
                     printf("%s:%i (%llu bytes at %p)\n", it->second.fileName, it->second.line, it->second.size, it->second.address);
                 }
             } else {

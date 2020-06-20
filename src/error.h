@@ -106,11 +106,11 @@ namespace qak {
         }
 
         bool hasErrors() {
-            return errors.getSize() != 0;
+            return errors.size() != 0;
         }
 
         void print() {
-            for (u4 i = 0; i < errors.getSize(); i++) {
+            for (u4 i = 0; i < errors.size(); i++) {
                 errors[i].print();
             }
             printf("\n");

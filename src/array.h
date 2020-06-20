@@ -7,66 +7,66 @@ namespace qak {
     template<typename T>
     class Array {
     public:
-        Array(HeapAllocator &mem, u8 capacity = 0) : mem(mem), size(0), capacity(0), buffer(nullptr) {
+        Array(HeapAllocator &mem, u8 capacity = 0) : _mem(mem), _size(0), _capacity(0), _buffer(nullptr) {
             if (capacity > 0)
                 ensureCapacity(capacity);
         }
 
         ~Array() {
             clear();
-            deallocate(buffer);
+            deallocate(_buffer);
         }
 
         inline void clear() {
-            for (u8 i = 0; i < size; ++i) {
-                destroy(buffer + (size - 1 - i));
+            for (u8 i = 0; i < _size; ++i) {
+                destroy(_buffer + (_size - 1 - i));
             }
 
-            size = 0;
+            _size = 0;
         }
 
-        inline u8 getCapacity() const {
-            return capacity;
+        inline u8 capacity() const {
+            return _capacity;
         }
 
-        inline u8 getSize() const {
-            return size;
+        inline u8 size() const {
+            return _size;
         }
 
         inline void setSize(u8 newSize, const T &defaultValue) {
-            u8 oldSize = size;
-            size = newSize;
-            if (capacity < newSize) {
-                capacity = (int) (size * 1.75f);
-                if (capacity < 8) capacity = 8;
-                buffer = mem.realloc<T>(buffer, capacity, __FILE__, __LINE__);
+            u8 oldSize = _size;
+            _size = newSize;
+            if (_capacity < newSize) {
+                _capacity = (int) (_size * 1.75f);
+                if (_capacity < 8) _capacity = 8;
+                _buffer = _mem.realloc<T>(_buffer, _capacity, __FILE__, __LINE__);
             }
-            if (oldSize < size) {
-                for (u8 i = oldSize; i < size; i++) {
-                    construct(buffer + i, defaultValue);
+            if (oldSize < _size) {
+                for (u8 i = oldSize; i < _size; i++) {
+                    construct(_buffer + i, defaultValue);
                 }
             }
         }
 
         inline void ensureCapacity(u8 newCapacity = 0) {
-            if (capacity >= newCapacity) return;
-            capacity = newCapacity;
-            buffer = mem.realloc<T>(buffer, newCapacity, __FILE__, __LINE__);
+            if (_capacity >= newCapacity) return;
+            _capacity = newCapacity;
+            _buffer = _mem.realloc<T>(_buffer, newCapacity, __FILE__, __LINE__);
         }
 
         inline void add(const T &inValue) {
-            if (size == capacity) {
+            if (_size == _capacity) {
                 // inValue might reference an element in this buffer
                 // When we reallocate, the reference becomes invalid.
                 // We thus need to create a defensive copy before
                 // reallocating.
                 T valueCopy = inValue;
-                capacity = (int) (size * 1.75f);
-                if (capacity < 8) capacity = 8;
-                buffer = mem.realloc<T>(buffer, capacity, __FILE__, __LINE__);
-                construct(buffer + size++, valueCopy);
+                _capacity = (int) (_size * 1.75f);
+                if (_capacity < 8) _capacity = 8;
+                _buffer = _mem.realloc<T>(_buffer, _capacity, __FILE__, __LINE__);
+                construct(_buffer + _size++, valueCopy);
             } else {
-                construct(buffer + size++, inValue);
+                construct(_buffer + _size++, inValue);
             }
         }
 
@@ -83,24 +83,24 @@ namespace qak {
         }
 
         inline void removeAt(u8 inIndex) {
-            assert(inIndex < size);
+            assert(inIndex < _size);
 
-            --size;
+            --_size;
 
-            if (inIndex != size) {
-                for (u8 i = inIndex; i < size; ++i) {
-                    T tmp(buffer[i]);
-                    buffer[i] = buffer[i + 1];
-                    buffer[i + 1] = tmp;
+            if (inIndex != _size) {
+                for (u8 i = inIndex; i < _size; ++i) {
+                    T tmp(_buffer[i]);
+                    _buffer[i] = _buffer[i + 1];
+                    _buffer[i + 1] = tmp;
                 }
             }
 
-            destroy(buffer + size);
+            destroy(_buffer + _size);
         }
 
         inline bool contains(const T &inValue) {
-            for (u8 i = 0; i < size; ++i) {
-                if (buffer[i] == inValue) {
+            for (u8 i = 0; i < _size; ++i) {
+                if (_buffer[i] == inValue) {
                     return true;
                 }
             }
@@ -109,8 +109,8 @@ namespace qak {
         }
 
         inline int indexOf(const T &inValue) {
-            for (u8 i = 0; i < size; ++i) {
-                if (buffer[i] == inValue) {
+            for (u8 i = 0; i < _size; ++i) {
+                if (_buffer[i] == inValue) {
                     return (int) i;
                 }
             }
@@ -119,17 +119,17 @@ namespace qak {
         }
 
         inline T &operator[](u8 inIndex) {
-            assert(inIndex < size);
+            assert(inIndex < _size);
 
-            return buffer[inIndex];
+            return _buffer[inIndex];
         }
 
         inline friend bool operator==(Array<T> &lhs, Array<T> &rhs) {
-            if (lhs.size() != rhs.size()) {
+            if (lhs._size() != rhs._size()) {
                 return false;
             }
 
-            for (u8 i = 0, n = lhs.size(); i < n; ++i) {
+            for (u8 i = 0, n = lhs._size(); i < n; ++i) {
                 if (lhs[i] != rhs[i]) {
                     return false;
                 }
@@ -143,17 +143,17 @@ namespace qak {
         }
 
         inline T *getBuffer() {
-            return buffer;
+            return _buffer;
         }
 
     private:
-        HeapAllocator &mem;
-        u8 size;
-        u8 capacity;
-        T *buffer;
+        HeapAllocator &_mem;
+        u8 _size;
+        u8 _capacity;
+        T *_buffer;
 
         inline T *allocate(u8 n) {
-            T *ptr = mem.calloc<T>(n, __FILE__, __LINE__);
+            T *ptr = _mem.calloc<T>(n, __FILE__, __LINE__);
 
             assert(ptr);
 
@@ -162,7 +162,7 @@ namespace qak {
 
         inline void deallocate(T *buffer) {
             if (buffer) {
-                mem.free(buffer, __FILE__, __LINE__);
+                _mem.free(buffer, __FILE__, __LINE__);
             }
         }
 

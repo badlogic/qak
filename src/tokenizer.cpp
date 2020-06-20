@@ -343,7 +343,7 @@ Token *TokenStream::peek() {
 Token *TokenStream::expect(TokenType type) {
     bool result = match(type, true);
     if (!result) {
-        Token *token = (u8) index < tokens.getSize() ? &tokens[index] : nullptr;
+        Token *token = (u8) index < tokens.size() ? &tokens[index] : nullptr;
         Span *span = token != nullptr ? &token->span : nullptr;
         if (span == nullptr)
             errors.add({source, 0, 0}, "Expected '%s', but reached the end of the source.", tokenizer::tokenTypeToString(type));
@@ -362,7 +362,7 @@ Token *TokenStream::expect(TokenType type) {
 Token *TokenStream::expect(const char *text) {
     bool result = match(text, true);
     if (!result) {
-        Token *token = (u8) index < tokens.getSize() ? &tokens[index] : nullptr;
+        Token *token = (u8) index < tokens.size() ? &tokens[index] : nullptr;
         Span *span = token != nullptr ? &token->span : nullptr;
         if (span == nullptr) {
             errors.add({source, 0, 0}, "Expected '%s', but reached the end of the source.", text);

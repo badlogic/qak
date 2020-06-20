@@ -35,10 +35,10 @@ void testTokenizer() {
     Source source = {file, "data/tokens.qak"};
     tokenizer::tokenize(source, tokens, errors);
 
-    QAK_CHECK(tokens.getSize() == 42, "Expected 42 tokens, got %llu", tokens.getSize())
-    QAK_CHECK(errors.getErrors().getSize() == 0, "Expected 0 errors, got %llu", errors.getErrors().getSize());
+    QAK_CHECK(tokens.size() == 42, "Expected 42 tokens, got %llu", tokens.size())
+    QAK_CHECK(errors.getErrors().size() == 0, "Expected 0 errors, got %llu", errors.getErrors().size());
 
-    for (u4 i = 0; i < tokens.getSize(); i++) {
+    for (u4 i = 0; i < tokens.size(); i++) {
         Token &token = tokens[i];
         printf("%s (%d:%d): %s\n", tokenizer::tokenTypeToString(token.type), token.span.start, token.span.end, token.toCString(mem));
     }
@@ -53,7 +53,7 @@ void testError() {
     Errors errors(mem);
 
     tokenizer::tokenize({file, "data/tokens_error.qak"}, tokens, errors);
-    QAK_CHECK(errors.getErrors().getSize() == 1, "Expected 1 error, got %llu", errors.getErrors().getSize());
+    QAK_CHECK(errors.getErrors().size() == 1, "Expected 1 error, got %llu", errors.getErrors().size());
 
     errors.getErrors()[0].print();
 }
