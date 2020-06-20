@@ -67,7 +67,7 @@ namespace qak {
             if (line.getLength() > 0) {
                 printf("%s\n", lineStr);
                 s4 errorStart = span.start - line.start;
-                s4 errorEnd = errorStart + span.getLength();
+                s4 errorEnd = errorStart + span.getLength() - 1;
                 for (s4 i = 0, n = line.getLength(); i < n; i++) {
                     bool useTab = (line.source.buffer.data + line.start)[i] == '\t';
                     printf("%s", i >= errorStart && i <= errorEnd ? "^" : (useTab ? "\t" : " "));

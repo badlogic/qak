@@ -123,8 +123,6 @@ AstNode *Parser::parseStatement(TokenStream &stream, Module *module, Errors &err
 }
 
 Variable *Parser::parseVariable(TokenStream &stream, Errors &errors) {
-    // var name (: type)? (= expression)?
-
     stream.expect("var");
 
     Token *name = stream.expect(Identifier);
@@ -165,6 +163,7 @@ Expression *Parser::parseTernaryOperator(TokenStream &stream, Errors &errors) {
     if (stream.match("?", true)) {
         Expression *trueValue = parseTernaryOperator(stream, errors);
         if (!trueValue) return nullptr;
+        if (!stream.match(":", true)) return nullptr;
         Expression *falseValue = parseTernaryOperator(stream, errors);
         if (!falseValue) return nullptr;
         TernaryOperation *ternary = new(QAK_ALLOC(TernaryOperation)) TernaryOperation(condition, trueValue, falseValue);
@@ -202,6 +201,8 @@ Expression *Parser::parseBinaryOperator(TokenStream &stream, Errors &errors, u4 
 
         Token *opToken = stream.consume();
         Expression *right = nextLevel == OPERATOR_NUM_GROUPS ? parseUnaryOperator(stream, errors) : parseBinaryOperator(stream, errors, nextLevel);
+        if (right == nullptr) return nullptr;
+
         left = new(QAK_ALLOC(BinaryOperation)) BinaryOperation(opToken->span, left, right);
     }
     return left;
