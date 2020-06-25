@@ -69,7 +69,7 @@ namespace qak {
             return result;
         }
 
-        template <typename E>
+        template<typename E>
         void freeObject(E *ptr, const char *file, u4 line) {
             ptr->~E();
             free(ptr, file, line);
@@ -91,7 +91,7 @@ namespace qak {
                     printf("%s:%i (%llu bytes at %p)\n", it->second.fileName, it->second.line, it->second.size, it->second.address);
                     totalSize += it->second.size;
                 }
-                printf("Total memory: %llu, #allocations: %lu\n", totalSize,  _allocations.size());
+                printf("Total memory: %llu, #allocations: %lu\n", totalSize, _allocations.size());
             } else {
                 printf("No allocations.");
             }

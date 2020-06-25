@@ -17,7 +17,7 @@ struct Module {
     Array<Token> tokens;
     ast::Module *astModule;
 
-    Module(HeapAllocator &mem, Source source, Array<Token> &tokens, ast::Module *astModule): mem(mem), source(source), tokens(mem), astModule(astModule) {
+    Module(HeapAllocator &mem, Source source, Array<Token> &tokens, ast::Module *astModule) : mem(mem), source(source), tokens(mem), astModule(astModule) {
         this->tokens.addAll(tokens);
     };
 
@@ -41,7 +41,7 @@ void qak_compiler_delete(qak_compiler compilerHandle) {
     delete mem;
 }
 
-qak_module qak_compile_file(qak_compiler compilerHandle, const char* fileName) {
+qak_module qak_compile_file(qak_compiler compilerHandle, const char *fileName) {
     Compiler *compiler = (Compiler *) compilerHandle;
     Buffer buffer = io::readFile(fileName, *compiler->mem);
     if (buffer.data == nullptr) return nullptr;
@@ -55,12 +55,12 @@ qak_module qak_compile_file(qak_compiler compilerHandle, const char* fileName) {
     ast::Module *astModule = parser.parse(source, compiler->errors);
     if (astModule == nullptr) return nullptr;
 
-    Module* module = QAK_ALLOC_OBJ(compiler->mem, Module, *compiler->mem, source, tokens, astModule);
+    Module *module = QAK_ALLOC_OBJ(compiler->mem, Module, *compiler->mem, source, tokens, astModule);
     return module;
 }
 
 void qak_module_delete(qak_module moduleHandle) {
-    Module* module = (Module*)moduleHandle;
+    Module *module = (Module *) moduleHandle;
     HeapAllocator &mem = module->mem;
     mem.freeObject(module, __FILE__, __LINE__);
 }

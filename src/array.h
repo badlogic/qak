@@ -13,8 +13,8 @@ namespace qak {
         }
 
         template<typename E>
-        static void freeObjects(Array<E*>& items) {
-            for (int i = (int)items.size() - 1; i >= 0; i--) {
+        static void freeObjects(Array<E *> &items) {
+            for (int i = (int) items.size() - 1; i >= 0; i--) {
                 items._mem.freeObject(items[i], __FILE__, __LINE__);
                 items.removeAt(i);
             }

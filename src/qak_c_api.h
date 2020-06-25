@@ -14,7 +14,7 @@ qak_compiler qak_compiler_new();
 
 void qak_compiler_delete(qak_compiler compiler);
 
-qak_module qak_compile_file(qak_compiler compiler, const char* fileName);
+qak_module qak_compile_file(qak_compiler compiler, const char *fileName);
 
 void qak_module_delete(qak_module moduleHandle);
 

@@ -237,8 +237,9 @@ namespace qak {
             Expression *left;
             Expression *right;
 
-            BinaryOperation(HeapAllocator &mem, Span op, Expression *left, Expression *right) : Expression(mem, AstBinaryOperation, left->span, right->span), op(op), left(left),
-                                                                            right(right) {}
+            BinaryOperation(HeapAllocator &mem, Span op, Expression *left, Expression *right) : Expression(mem, AstBinaryOperation, left->span, right->span),
+                                                                                                op(op), left(left),
+                                                                                                right(right) {}
 
             virtual ~BinaryOperation() {
                 mem.freeObject(left, __FILE__, __LINE__);
