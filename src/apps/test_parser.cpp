@@ -31,6 +31,9 @@ void testExpression() {
     Module *module = parser.parse(source, errors);
     if (errors.hasErrors()) errors.print();
     QAK_CHECK(module, "Expected module, got nullptr.");
+
+    mem.freeObject(module, __FILE__, __LINE__);
+    QAK_CHECK(mem.numAllocations() == 1, "Expected all memory to be deallocated, but %llu allocations remaining.", mem.numAllocations());
 }
 
 void testModuleVariable() {
@@ -46,7 +49,7 @@ void testModuleVariable() {
     if (errors.hasErrors()) errors.print();
     QAK_CHECK(module, "Expected module, got nullptr.");
 
-    module->print(mem);
+    module->print();
 }
 
 void testFunction() {
@@ -62,7 +65,7 @@ void testFunction() {
     if (errors.hasErrors()) errors.print();
     QAK_CHECK(module, "Expected module, got nullptr.");
 
-    module->print(mem);
+    module->print();
 }
 
 int main() {

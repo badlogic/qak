@@ -7,6 +7,7 @@
 // Default block size of the BumpAllocator
 #define QAK_BLOCK_SIZE (512 * 1024)
 #define QAK_ALLOC(type) _mem.alloc<type>(1, __FILE__, __LINE__)
+#define QAK_ALLOC_OBJ(mem, type, ...) (new (mem->alloc<type>(1, __FILE__, __LINE__)) type(__VA_ARGS__))
 
 namespace qak {
     struct Allocation {
@@ -68,8 +69,13 @@ namespace qak {
             return result;
         }
 
-        template<typename T>
-        void free(T *ptr, const char *file, u4 line) {
+        template <typename E>
+        void freeObject(E *ptr, const char *file, u4 line) {
+            ptr->~E();
+            free(ptr, file, line);
+        }
+
+        void free(void *ptr, const char *file, u4 line) {
             if (_allocations.count(ptr)) {
                 ::free((void *) ptr);
                 _allocations.erase(ptr);
@@ -80,12 +86,19 @@ namespace qak {
 
         void printAllocations() {
             if (_allocations.size() > 0) {
+                u8 totalSize = 0;
                 for (std::map<void *, Allocation>::iterator it = _allocations.begin(); it != _allocations.end(); it++) {
                     printf("%s:%i (%llu bytes at %p)\n", it->second.fileName, it->second.line, it->second.size, it->second.address);
+                    totalSize += it->second.size;
                 }
+                printf("Total memory: %llu, #allocations: %lu\n", totalSize,  _allocations.size());
             } else {
                 printf("No allocations.");
             }
+        }
+
+        u8 numAllocations() {
+            return _allocations.size();
         }
     };
 

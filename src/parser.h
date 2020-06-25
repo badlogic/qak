@@ -25,45 +25,56 @@ namespace qak {
         };
 
         struct AstNode {
+            HeapAllocator &mem;
             AstType astType;
             Span span;
 
-            AstNode(AstType astType, Span start, Span end) : astType(astType), span(start.source, start.start, end.end) {}
+            AstNode(HeapAllocator &mem, AstType astType, Span start, Span end) : mem(mem), astType(astType), span(start.source, start.start, end.end) {}
 
-            AstNode(AstType astType, Span span) : astType(astType), span(span) {}
+            AstNode(HeapAllocator &mem, AstType astType, Span span) : mem(mem), astType(astType), span(span) {}
 
-            virtual void print(int indent, HeapAllocator &mem) = 0;
+            virtual ~AstNode() {}
+
+            virtual void print(int indent) = 0;
         };
 
         struct TypeSpecifier : public AstNode {
             Span name;
 
-            TypeSpecifier(Span name) : AstNode(AstTypeSpecifier, name), name(name) {}
+            TypeSpecifier(HeapAllocator &mem, Span name) : AstNode(mem, AstTypeSpecifier, name), name(name) {}
 
-            void print(int indent, HeapAllocator &mem) {
+            virtual ~TypeSpecifier() {}
+
+            void print(int indent) {
                 printf("%*s", indent, "");
                 printf("type: %s\n", name.toCString(mem));
             }
         };
 
         struct Statement : public AstNode {
-            Statement(AstType astType, Span start, Span end) : AstNode(astType, start, end) {}
+            Statement(HeapAllocator &mem, AstType astType, Span start, Span end) : AstNode(mem, astType, start, end) {}
+
+            virtual ~Statement() {}
         };
 
         struct Parameter : public AstNode {
             Span name;
             TypeSpecifier *typeSpecifier;
 
-            Parameter(Span name, TypeSpecifier *typeSpecifier) :
-                    AstNode(AstParameter, name, typeSpecifier->span),
+            Parameter(HeapAllocator &mem, Span name, TypeSpecifier *typeSpecifier) :
+                    AstNode(mem, AstParameter, name, typeSpecifier->span),
                     name(name),
                     typeSpecifier(typeSpecifier) {
             }
 
-            void print(int indent, HeapAllocator &mem) {
+            virtual ~Parameter() {
+                mem.freeObject(typeSpecifier, __FILE__, __LINE__);
+            }
+
+            void print(int indent) {
                 printf("%*s", indent, "");
                 printf("Parameter: %s\n", name.toCString(mem));
-                typeSpecifier->print(indent + QAK_AST_INDENT, mem);
+                typeSpecifier->print(indent + QAK_AST_INDENT);
             }
         };
 
@@ -73,39 +84,47 @@ namespace qak {
             TypeSpecifier *returnType;
             Array<Statement *> statements;
 
-            Function(Span name, Array<Parameter *> &parameters, TypeSpecifier *returnType, Array<Statement *> &statements, HeapAllocator &mem) :
-                    AstNode(AstFunction, name, name), name(name), parameters(mem), returnType(returnType), statements(mem) {
+            Function(HeapAllocator &mem, Span name, Array<Parameter *> &parameters, TypeSpecifier *returnType, Array<Statement *> &statements) :
+                    AstNode(mem, AstFunction, name, name), name(name), parameters(mem), returnType(returnType), statements(mem) {
                 this->parameters.addAll(parameters);
                 this->statements.addAll(statements);
             }
 
-            void print(int indent, HeapAllocator &mem) {
+            virtual ~Function() {
+                parameters.freeObjects();
+                if (returnType) mem.freeObject(returnType, __FILE__, __LINE__);
+                statements.freeObjects();
+            }
+
+            void print(int indent) {
                 printf("%*s", indent, "");
                 printf("Function: %s\n", name.toCString(mem));
                 if (parameters.size() > 0) {
                     printf("%*s", indent + QAK_AST_INDENT, "");
                     printf("Parameters:\n");
                     for (u8 i = 0; i < parameters.size(); i++)
-                        parameters[i]->print(indent + QAK_AST_INDENT * 2, mem);
+                        parameters[i]->print(indent + QAK_AST_INDENT * 2);
                 }
                 if (returnType) {
                     printf("%*s", indent + QAK_AST_INDENT, "");
                     printf("Return type:\n");
-                    returnType->print(indent + QAK_AST_INDENT * 2, mem);
+                    returnType->print(indent + QAK_AST_INDENT * 2);
                 }
 
                 if (statements.size() > 0) {
                     printf("%*s", indent + QAK_AST_INDENT, "");
                     printf("Statements:\n");
                     for (u8 i = 0; i < statements.size(); i++) {
-                        statements[i]->print(indent + QAK_AST_INDENT * 2, mem);
+                        statements[i]->print(indent + QAK_AST_INDENT * 2);
                     }
                 }
             }
         };
 
         struct Expression : public Statement {
-            Expression(AstType astType, Span start, Span end) : Statement(astType, start, end) {}
+            Expression(HeapAllocator &mem, AstType astType, Span start, Span end) : Statement(mem, astType, start, end) {}
+
+            virtual ~Expression() {}
         };
 
         struct Variable : public Statement {
@@ -113,17 +132,22 @@ namespace qak {
             TypeSpecifier *typeSpecifier;
             Expression *expression;
 
-            Variable(Span name, TypeSpecifier *type, Expression *expression) :
-                    Statement(AstVariable, name, name), name(name), typeSpecifier(type), expression(expression) {}
+            Variable(HeapAllocator &mem, Span name, TypeSpecifier *type, Expression *expression) :
+                    Statement(mem, AstVariable, name, name), name(name), typeSpecifier(type), expression(expression) {}
 
-            void print(int indent, HeapAllocator &mem) {
+            virtual ~Variable() {
+                if (typeSpecifier) mem.freeObject(typeSpecifier, __FILE__, __LINE__);
+                if (expression) mem.freeObject(expression, __FILE__, __LINE__);
+            }
+
+            void print(int indent) {
                 printf("%*s", indent, "");
                 printf("Variable: %s\n", name.toCString(mem));
-                if (typeSpecifier) typeSpecifier->print(indent + QAK_AST_INDENT, mem);
+                if (typeSpecifier) typeSpecifier->print(indent + QAK_AST_INDENT);
                 if (expression) {
                     printf("%*s", indent + QAK_AST_INDENT, "");
                     printf("Initializer: \n");
-                    expression->print(indent + QAK_AST_INDENT * 2, mem);
+                    expression->print(indent + QAK_AST_INDENT * 2);
                 }
             }
         };
@@ -132,12 +156,19 @@ namespace qak {
             Expression *condition;
             Array<Statement *> statements;
 
-            While(Span start, Span end, Expression *condition, Array<Statement *> &statements, HeapAllocator &mem) :
-                    Statement(AstWhile, start, end),
+            While(HeapAllocator &mem, Span start, Span end, Expression *condition, Array<Statement *> &statements) :
+                    Statement(mem, AstWhile, start, end),
                     condition(condition),
                     statements(mem) {
                 this->statements.addAll(statements);
             }
+
+            virtual ~While() {
+                mem.freeObject(condition, __FILE__, __LINE__);
+                statements.freeObjects();
+            }
+
+            // BOZO print
         };
 
         struct If : public Statement {
@@ -145,20 +176,34 @@ namespace qak {
             Array<Statement *> trueBlock;
             Array<Statement *> falseBlock;
 
-            If(Span start, Span end, Expression *condition, Array<Statement *> &trueBlock, Array<Statement *> &falseBlock, HeapAllocator &mem) :
-                    Statement(AstIf, start, end),
+            If(HeapAllocator &mem, Span start, Span end, Expression *condition, Array<Statement *> &trueBlock, Array<Statement *> &falseBlock) :
+                    Statement(mem, AstIf, start, end),
                     condition(condition),
                     trueBlock(mem),
                     falseBlock(mem) {
                 this->trueBlock.addAll(trueBlock);
                 this->falseBlock.addAll(falseBlock);
             }
+
+            virtual ~If() {
+                mem.freeObject(condition, __FILE__, __LINE__);
+                trueBlock.freeObjects();
+                falseBlock.freeObjects();
+            }
+
+            // BOZO print
         };
 
         struct Return : public Statement {
             Expression *returnValue;
 
-            Return(Span start, Span end, Expression *returnValue) : Statement(AstReturn, start, end), returnValue(returnValue) {}
+            Return(HeapAllocator &mem, Span start, Span end, Expression *returnValue) : Statement(mem, AstReturn, start, end), returnValue(returnValue) {}
+
+            virtual ~Return() {
+                if (returnValue) mem.freeObject(returnValue, __FILE__, __LINE__);
+            }
+
+            // BOZO print
         };
 
         struct TernaryOperation : public Expression {
@@ -166,18 +211,24 @@ namespace qak {
             Expression *trueValue;
             Expression *falseValue;
 
-            TernaryOperation(Expression *condition, Expression *trueValue, Expression *falseValue) :
-                    Expression(AstTernaryOperation, condition->span, falseValue->span),
+            TernaryOperation(HeapAllocator &mem, Expression *condition, Expression *trueValue, Expression *falseValue) :
+                    Expression(mem, AstTernaryOperation, condition->span, falseValue->span),
                     condition(condition),
                     trueValue(trueValue),
                     falseValue(falseValue) {}
 
-            void print(int indent, HeapAllocator &mem) {
+            virtual ~TernaryOperation() {
+                mem.freeObject(condition, __FILE__, __LINE__);
+                mem.freeObject(trueValue, __FILE__, __LINE__);
+                mem.freeObject(falseValue, __FILE__, __LINE__);
+            }
+
+            void print(int indent) {
                 printf("%*s", indent, "");
                 printf("Ternary op:\n");
-                condition->print(indent + QAK_AST_INDENT, mem);
-                trueValue->print(indent + QAK_AST_INDENT, mem);
-                falseValue->print(indent + QAK_AST_INDENT, mem);
+                condition->print(indent + QAK_AST_INDENT);
+                trueValue->print(indent + QAK_AST_INDENT);
+                falseValue->print(indent + QAK_AST_INDENT);
             }
         };
 
@@ -186,14 +237,19 @@ namespace qak {
             Expression *left;
             Expression *right;
 
-            BinaryOperation(Span op, Expression *left, Expression *right) : Expression(AstBinaryOperation, left->span, right->span), op(op), left(left),
+            BinaryOperation(HeapAllocator &mem, Span op, Expression *left, Expression *right) : Expression(mem, AstBinaryOperation, left->span, right->span), op(op), left(left),
                                                                             right(right) {}
 
-            void print(int indent, HeapAllocator &mem) {
+            virtual ~BinaryOperation() {
+                mem.freeObject(left, __FILE__, __LINE__);
+                mem.freeObject(right, __FILE__, __LINE__);
+            }
+
+            void print(int indent) {
                 printf("%*s", indent, "");
                 printf("Binary op: %s\n", op.toCString(mem));
-                left->print(indent + QAK_AST_INDENT, mem);
-                right->print(indent + QAK_AST_INDENT, mem);
+                left->print(indent + QAK_AST_INDENT);
+                right->print(indent + QAK_AST_INDENT);
             }
         };
 
@@ -201,12 +257,16 @@ namespace qak {
             Span op;
             Expression *expression;
 
-            UnaryOperation(Span op, Expression *expression) : Expression(AstUnaryOperation, op, op), op(op), expression(expression) {}
+            UnaryOperation(HeapAllocator &mem, Span op, Expression *expression) : Expression(mem, AstUnaryOperation, op, op), op(op), expression(expression) {}
 
-            void print(int indent, HeapAllocator &mem) {
+            virtual ~UnaryOperation() {
+                mem.freeObject(expression, __FILE__, __LINE__);
+            }
+
+            void print(int indent) {
                 printf("%*s", indent, "");
                 printf("Unary op: %s\n", op.toCString(mem));
-                expression->print(indent + QAK_AST_INDENT, mem);
+                expression->print(indent + QAK_AST_INDENT);
             }
         };
 
@@ -214,9 +274,9 @@ namespace qak {
             TokenType type;
             Span value;
 
-            Literal(TokenType type, Span value) : Expression(AstLiteral, value, value), type(type), value(value) {}
+            Literal(HeapAllocator &mem, TokenType type, Span value) : Expression(mem, AstLiteral, value, value), type(type), value(value) {}
 
-            void print(int indent, HeapAllocator &mem) {
+            void print(int indent) {
                 printf("%*s", indent, "");
                 printf("%s: %s\n", tokenizer::tokenTypeToString(type), value.toCString(mem));
             }
@@ -228,19 +288,24 @@ namespace qak {
             Array<Function *> functions;
             Array<Statement *> statements;
 
-            Module(Span name, HeapAllocator &mem) :
-                    AstNode(AstModule, name),
+            Module(HeapAllocator &mem, Span name) :
+                    AstNode(mem, AstModule, name),
                     name(name),
                     variables(mem),
                     functions(mem),
                     statements(mem) {
             }
 
-            void print(HeapAllocator &mem) {
-                print(0, mem);
+            virtual ~Module() {
+                functions.freeObjects();
+                statements.freeObjects();
             }
 
-            void print(int indent, HeapAllocator &mem) {
+            void print() {
+                print(0);
+            }
+
+            void print(int indent) {
                 printf("%*s", indent, "");
                 printf("Module: %s\n", name.toCString(mem));
 
@@ -248,12 +313,12 @@ namespace qak {
                     printf("%*s", indent + QAK_AST_INDENT, "");
                     printf("Module-level statements:\n");
                     for (u8 i = 0; i < statements.size(); i++) {
-                        statements[i]->print(indent + QAK_AST_INDENT * 2, mem);
+                        statements[i]->print(indent + QAK_AST_INDENT * 2);
                     }
                 }
 
                 for (u8 i = 0; i < functions.size(); i++) {
-                    functions[i]->print(indent + QAK_AST_INDENT, mem);
+                    functions[i]->print(indent + QAK_AST_INDENT);
                 }
             }
         };

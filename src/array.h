@@ -12,6 +12,14 @@ namespace qak {
                 ensureCapacity(capacity);
         }
 
+        template<typename E>
+        static void freeObjects(Array<E*>& items) {
+            for (int i = (int)items.size() - 1; i >= 0; i--) {
+                items._mem.freeObject(items[i], __FILE__, __LINE__);
+                items.removeAt(i);
+            }
+        }
+
         ~Array() {
             clear();
             deallocate(_buffer);
@@ -23,6 +31,10 @@ namespace qak {
             }
 
             _size = 0;
+        }
+
+        inline void freeObjects() {
+            Array::freeObjects(*this);
         }
 
         inline u8 capacity() const {
