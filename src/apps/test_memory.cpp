@@ -5,6 +5,7 @@
 using namespace qak;
 
 int main() {
+    Test test("Bump allocator");
     BumpAllocator allocator(16);
 
     u1 *fourBytes = allocator.alloc<u1>(4);

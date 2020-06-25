@@ -7,6 +7,7 @@ using namespace qak;
 using namespace qak::ast;
 
 void testModule() {
+    Test test("Parser - simple module");
     HeapAllocator mem;
 
     Buffer file = io::readFile("data/parser_module.qak", mem);
@@ -20,6 +21,7 @@ void testModule() {
 }
 
 void testExpression() {
+    Test test("Parser - expressions");
     HeapAllocator mem;
 
     Buffer file = io::readFile("data/parser_expression.qak", mem);
@@ -37,6 +39,7 @@ void testExpression() {
 }
 
 void testModuleVariable() {
+    Test test("Parser - module variable");
     HeapAllocator mem;
 
     Buffer file = io::readFile("data/parser_module_var.qak", mem);
@@ -53,6 +56,7 @@ void testModuleVariable() {
 }
 
 void testFunction() {
+    Test test("Parser - function");
     HeapAllocator mem;
 
     Buffer file = io::readFile("data/parser_function.qak", mem);

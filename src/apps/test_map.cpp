@@ -19,6 +19,7 @@ struct IntEqualsFunction {
 typedef Map<int, int, IntHashFunction, IntEqualsFunction> IntIntMap;
 
 int main() {
+    Test test("Map");
     HeapAllocator mem;
     {
         IntIntMap intMap(mem);

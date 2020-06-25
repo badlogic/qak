@@ -5,6 +5,7 @@
 using namespace qak;
 
 void testBench() {
+    Test test("Tokenizer - Benchmark");
     u8 start = io::timeMillis();
     HeapAllocator mem;
     Buffer file = io::readFile("data/tokens.qak", mem);
@@ -26,6 +27,7 @@ void testBench() {
 }
 
 void testTokenizer() {
+    Test test("Tokenizer - all token types");
     HeapAllocator mem;
     Buffer file = io::readFile("data/tokens.qak", mem);
     QAK_CHECK(file.data != nullptr, "Couldn't read test file data/tokens.qak");
@@ -45,6 +47,7 @@ void testTokenizer() {
 }
 
 void testError() {
+    Test test("Tokenizer - unknown token");
     HeapAllocator mem;
     Buffer file = io::readFile("data/tokens_error.qak", mem);
     QAK_CHECK(file.data != nullptr, "Couldn't read test file data/tokens_error.qak");
@@ -59,7 +62,7 @@ void testError() {
 }
 
 int main() {
-    // testBench();
+    testBench();
     testTokenizer();
     testError();
     return 0;
