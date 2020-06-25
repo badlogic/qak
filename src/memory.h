@@ -7,7 +7,6 @@
 // Default block size of the BumpAllocator
 #define QAK_BLOCK_SIZE (512 * 1024)
 #define QAK_ALLOC(type) _mem.alloc<type>(1, __FILE__, __LINE__)
-#define QAK_ALLOC_OBJ(mem, type, ...) (new (mem->alloc<type>(1, __FILE__, __LINE__)) type(__VA_ARGS__))
 
 namespace qak {
     struct Allocation {
@@ -40,6 +39,12 @@ namespace qak {
             T *ptr = (T *) ::malloc(size);
             _allocations[(void *) ptr] = Allocation(ptr, size, file, line);
             return ptr;
+        }
+
+        template<typename T, typename ... ARGS>
+        T *allocObject(const char *file, u4 line, ARGS &&...args) {
+            T *obj = new(alloc<T>(1, file, line)) T(std::forward<ARGS>(args)...);
+            return obj;
         }
 
         template<typename T>

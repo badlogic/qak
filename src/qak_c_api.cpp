@@ -29,7 +29,7 @@ struct Module {
 
 qak_compiler qak_compiler_new() {
     HeapAllocator *mem = new HeapAllocator();
-    Compiler *compiler = QAK_ALLOC_OBJ(mem, Compiler, mem);
+    Compiler *compiler = mem->allocObject<Compiler>(__FILE__, __LINE__, mem);
     return compiler;
 }
 
@@ -55,7 +55,7 @@ qak_module qak_compile_file(qak_compiler compilerHandle, const char *fileName) {
     ast::Module *astModule = parser.parse(source, compiler->errors);
     if (astModule == nullptr) return nullptr;
 
-    Module *module = QAK_ALLOC_OBJ(compiler->mem, Module, *compiler->mem, source, tokens, astModule);
+    Module *module = compiler->mem->allocObject<Module>(__FILE__, __LINE__, *compiler->mem, source, tokens, astModule);
     return module;
 }
 
