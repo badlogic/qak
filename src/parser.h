@@ -243,6 +243,9 @@ namespace qak {
 
             virtual ~Module() { }
 
+            // BOZO AstNode::print and this should get a HeapAllocator
+            // for printing, so we can keep arenas separate for debugging
+            // memory leaks.
             void print() {
                 print(0);
             }

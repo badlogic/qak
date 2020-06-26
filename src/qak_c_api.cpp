@@ -12,6 +12,8 @@ struct Compiler {
     Compiler(BumpAllocator *bumpMem, HeapAllocator *mem) : bumpMem(bumpMem), mem(mem), errors(*mem) {};
 };
 
+// BOZO each module should get its own HeapAllocator and BumpAllocator. Destructing a module
+// should kill the memory of the AST, source buffer, etc. and the allocators themselves.
 struct Module {
     HeapAllocator &mem;
     Source *source;
@@ -25,13 +27,13 @@ struct Module {
     ~Module() {
         source->buffer.free();
         mem.freeObject(source, __FILE__, __LINE__);
-        // BOZO astModule is allocated through a BumpAllocator
+        // BOZO astModule could be allocated through a BumpAllocator
         // by Parser. It contains Array instances which need
         // to be destructed via the default destructor.
-        // We could use a HeapAllocator in Parser, but that
-        // lowers throughput if there's many modules.
-        astModule->~Module();
-        // mem.freeObject(astModule, __FILE__, __LINE__);
+        // HeapAllocator lowers throughput if there's many modules.
+        // astModule->~Module();
+
+        mem.freeObject(astModule, __FILE__, __LINE__);
     }
 };
 

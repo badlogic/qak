@@ -64,7 +64,8 @@ void testExpression() {
     QAK_CHECK(module, "Expected module, got nullptr.");
 
     mem.freeObject(module, __FILE__, __LINE__);
-    QAK_CHECK(mem.numAllocations() == 1, "Expected all memory to be deallocated, but %llu allocations remaining.", mem.numAllocations());
+    if (mem.numAllocations() != 2) mem.printAllocations();
+    QAK_CHECK(mem.numAllocations() == 2, "Expected all memory to be deallocated, but %llu allocations remaining.", mem.numAllocations());
 }
 
 void testModuleVariable() {
@@ -105,9 +106,9 @@ void testFunction() {
 
 int main() {
     testBench();
-    /*testModule();
+    testModule();
     testExpression();
     testModuleVariable();
-    testFunction();*/
+    testFunction();
     return 0;
 }
