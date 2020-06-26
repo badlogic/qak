@@ -10,13 +10,14 @@ void testBench() {
     HeapAllocator mem;
     Buffer file = io::readFile("data/tokens.qak", mem);
     QAK_CHECK(file.data != nullptr, "Couldn't read test file data/tokens.qak");
+    Source source(file, "data/tokens.qak");
 
     Array<Token> tokens(mem);
     Errors errors(mem);
     u4 iterations = 1000000;
     for (u4 i = 0; i < iterations; i++) {
         tokens.clear();
-        tokenizer::tokenize({file, "data/tokens.qak"}, tokens, errors);
+        tokenizer::tokenize(source, tokens, errors);
     }
 
     f8 time = (io::timeMillis() - start) / 1000.0;
@@ -31,10 +32,11 @@ void testTokenizer() {
     HeapAllocator mem;
     Buffer file = io::readFile("data/tokens.qak", mem);
     QAK_CHECK(file.data != nullptr, "Couldn't read test file data/tokens.qak");
+    Source source = {file, "data/tokens.qak"};
 
     Array<Token> tokens(mem);
     Errors errors(mem);
-    Source source = {file, "data/tokens.qak"};
+
     tokenizer::tokenize(source, tokens, errors);
 
     QAK_CHECK(tokens.size() == 42, "Expected 42 tokens, got %llu", tokens.size())
@@ -51,11 +53,12 @@ void testError() {
     HeapAllocator mem;
     Buffer file = io::readFile("data/tokens_error.qak", mem);
     QAK_CHECK(file.data != nullptr, "Couldn't read test file data/tokens_error.qak");
+    Source source(file, "data/tokens_error.qak");
 
     Array<Token> tokens(mem);
     Errors errors(mem);
 
-    tokenizer::tokenize({file, "data/tokens_error.qak"}, tokens, errors);
+    tokenizer::tokenize(source, tokens, errors);
     QAK_CHECK(errors.getErrors().size() == 1, "Expected 1 error, got %llu", errors.getErrors().size());
 
     errors.getErrors()[0].print();

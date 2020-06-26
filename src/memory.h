@@ -5,8 +5,7 @@
 #include <map>
 
 // Default block size of the BumpAllocator
-#define QAK_BLOCK_SIZE (512 * 1024)
-#define QAK_ALLOC(type) _mem.alloc<type>(1, __FILE__, __LINE__)
+#define QAK_BLOCK_SIZE (512 * 16)
 
 namespace qak {
     struct Allocation {
@@ -17,7 +16,8 @@ namespace qak {
 
         Allocation() : address(nullptr), size(0), fileName(nullptr), line(0) {}
 
-        Allocation(void *address, u8 size, const char *file, int line) : address(address), size(size), fileName(file), line(line) {}
+        Allocation(void *address, u8 size, const char *file, int line) : address(address), size(size), fileName(file), line(line) {
+        }
     };
 
     struct HeapAllocator {
@@ -25,6 +25,10 @@ namespace qak {
         std::map<void *, Allocation> _allocations;
 
     public:
+        HeapAllocator() {};
+
+        HeapAllocator(const HeapAllocator &other) = delete;
+
         ~HeapAllocator() {
             for (std::map<void *, Allocation>::iterator it = _allocations.begin(); it != _allocations.end(); it++) {
                 ::free(it->second.address);
@@ -70,7 +74,7 @@ namespace qak {
                 result = (T *) ::realloc(ptr, size);
                 _allocations.erase(ptr);
             }
-            _allocations[(void *) result] = Allocation(ptr, size, file, line);
+            _allocations[(void *) result] = Allocation(result, size, file, line);
             return result;
         }
 
@@ -145,12 +149,16 @@ namespace qak {
         BumpAllocator(u8 blockSize) : head(nullptr), blockSize(blockSize) {
         };
 
+        BumpAllocator(BumpAllocator const &) = delete;
+
         ~BumpAllocator() {
-            while (head) {
-                Block *block = head;
-                head = block->next;
-                delete block;
-            }
+            free();
+        }
+
+        template<typename T, typename ... ARGS>
+        T *allocObject(ARGS &&...args) {
+            T *obj = new(alloc<T>(1)) T(std::forward<ARGS>(args)...);
+            return obj;
         }
 
         template<typename T>
@@ -182,7 +190,11 @@ namespace qak {
         u8 size;
 
         void free() {
-            if (data != nullptr) mem.free(data, __FILE__, __LINE__);
+            if (data != nullptr) {
+                mem.free(data, __FILE__, __LINE__);
+                data = nullptr;
+                size = 0;
+            }
         }
     };
 }

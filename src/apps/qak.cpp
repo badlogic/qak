@@ -19,10 +19,11 @@ int main(int argc, char **argv) {
         printf("Error: couldn't read file %s\n", argv[1]);
         return -1;
     }
+    Source source(file, argv[1]);
 
     Array<Token> tokens(mem);
     Errors errors(mem);
-    tokenizer::tokenize({file, argv[1]}, tokens, errors);
+    tokenizer::tokenize(source, tokens, errors);
 
     return 0;
 }

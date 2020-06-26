@@ -188,6 +188,34 @@ namespace qak {
 
         // Array &operator=(const Array &inArray) {};
     };
+
+    template <typename T>
+    class FixedArray {
+    public:
+        FixedArray(BumpAllocator &mem, Array<T> &array): _mem(mem), _size(array.size()) {
+            if (array.size() > 0) {
+                _buffer = _mem.alloc<T>(_size);
+                for (u8 i = 0; i < _size; i++) {
+                    new(_buffer + i) T(array[i]);
+                }
+            }
+        }
+
+        inline T &operator[](u8 inIndex) {
+            assert(inIndex < _size);
+
+            return _buffer[inIndex];
+        }
+
+        inline u8 size() const {
+            return _size;
+        }
+
+    private:
+        BumpAllocator &_mem;
+        u8 _size;
+        T *_buffer;
+    };
 }
 
 #endif //QAK_ARRAY_H

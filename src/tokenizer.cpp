@@ -24,7 +24,7 @@ static u4 nextUtf8Character(const u1 *s, u4 *i) {
     return ch;
 }
 
-CharacterStream::CharacterStream(Source source) : source(source), index(0), end(source.buffer.size), spanStart(0) {
+CharacterStream::CharacterStream(Source &source) : source(source), index(0), end(source.buffer.size), spanStart(0) {
 }
 
 bool CharacterStream::hasMore() {
@@ -210,7 +210,7 @@ const char *tokenizer::tokenTypeToString(TokenType type) {
     return nullptr;
 }
 
-void tokenizer::tokenize(Source source, Array<Token> &tokens, Errors &errors) {
+void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
     CharacterStream stream(source);
 
     while (stream.hasMore()) {

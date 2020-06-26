@@ -14,11 +14,11 @@ namespace qak {
     };
 
     struct Span {
-        Source source;
+        Source &source;
         u4 start;
         u4 end;
 
-        Span(Source source, u4 start, u4 end) : source(source), start(start), end(end) {}
+        Span(Source &source, u4 start, u4 end) : source(source), start(start), end(end) {}
 
         const char *toCString(HeapAllocator &mem) {
             u1 *sourceData = source.buffer.data;
@@ -43,12 +43,12 @@ namespace qak {
     };
 
     struct Line {
-        Source source;
+        Source &source;
         u4 start;
         u4 end;
         u4 line;
 
-        Line(Source source, u4 start, u4 end, u4 line) : source(source), start(start), end(end), line(line) {}
+        Line(Source &source, u4 start, u4 end, u4 line) : source(source), start(start), end(end), line(line) {}
 
         u4 getLength() {
             return end - start;

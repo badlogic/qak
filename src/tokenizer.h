@@ -6,12 +6,12 @@
 
 namespace qak {
     struct CharacterStream {
-        Source source;
+        Source &source;
         u4 index;
         u4 end;
         u4 spanStart;
 
-        CharacterStream(Source source);
+        CharacterStream(Source &source);
 
         bool hasMore();
 
@@ -106,13 +106,13 @@ namespace qak {
     };
 
     struct TokenStream {
-        Source source;
+        Source &source;
         Array<Token> &tokens;
         Errors &errors;
         int index;
         int end;
 
-        TokenStream(Source source, Array<Token> &tokens, Errors &errors) : source(source), tokens(tokens), errors(errors), index(0), end(tokens.size()) {}
+        TokenStream(Source &source, Array<Token> &tokens, Errors &errors) : source(source), tokens(tokens), errors(errors), index(0), end(tokens.size()) {}
 
         /** Returns whether there are more tokens in the stream. **/
         bool hasMore();
@@ -139,7 +139,7 @@ namespace qak {
     };
 
     namespace tokenizer {
-        void tokenize(Source, Array<Token> &tokens, Errors &errors);
+        void tokenize(Source &source, Array<Token> &tokens, Errors &errors);
 
         const char *tokenTypeToString(TokenType type);
     };

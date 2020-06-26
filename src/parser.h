@@ -43,8 +43,6 @@ namespace qak {
 
             TypeSpecifier(HeapAllocator &mem, Span name) : AstNode(mem, AstTypeSpecifier, name), name(name) {}
 
-            virtual ~TypeSpecifier() {}
-
             void print(int indent) {
                 printf("%*s", indent, "");
                 printf("type: %s\n", name.toCString(mem));
@@ -53,8 +51,6 @@ namespace qak {
 
         struct Statement : public AstNode {
             Statement(HeapAllocator &mem, AstType astType, Span start, Span end) : AstNode(mem, astType, start, end) {}
-
-            virtual ~Statement() {}
         };
 
         struct Parameter : public AstNode {
@@ -67,10 +63,6 @@ namespace qak {
                     typeSpecifier(typeSpecifier) {
             }
 
-            virtual ~Parameter() {
-                mem.freeObject(typeSpecifier, __FILE__, __LINE__);
-            }
-
             void print(int indent) {
                 printf("%*s", indent, "");
                 printf("Parameter: %s\n", name.toCString(mem));
@@ -80,20 +72,12 @@ namespace qak {
 
         struct Function : public AstNode {
             Span name;
-            Array<Parameter *> parameters;
+            FixedArray<Parameter *> parameters;
             TypeSpecifier *returnType;
-            Array<Statement *> statements;
+            FixedArray<Statement *> statements;
 
-            Function(HeapAllocator &mem, Span name, Array<Parameter *> &parameters, TypeSpecifier *returnType, Array<Statement *> &statements) :
-                    AstNode(mem, AstFunction, name, name), name(name), parameters(mem), returnType(returnType), statements(mem) {
-                this->parameters.addAll(parameters);
-                this->statements.addAll(statements);
-            }
-
-            virtual ~Function() {
-                parameters.freeObjects();
-                if (returnType) mem.freeObject(returnType, __FILE__, __LINE__);
-                statements.freeObjects();
+            Function(BumpAllocator &bumpMem, HeapAllocator &mem, Span name, Array<Parameter *> &parameters, TypeSpecifier *returnType, Array<Statement *> &statements) :
+                    AstNode(mem, AstFunction, name, name), name(name), parameters(bumpMem, parameters), returnType(returnType), statements(bumpMem, statements) {
             }
 
             void print(int indent) {
@@ -123,8 +107,6 @@ namespace qak {
 
         struct Expression : public Statement {
             Expression(HeapAllocator &mem, AstType astType, Span start, Span end) : Statement(mem, astType, start, end) {}
-
-            virtual ~Expression() {}
         };
 
         struct Variable : public Statement {
@@ -134,11 +116,6 @@ namespace qak {
 
             Variable(HeapAllocator &mem, Span name, TypeSpecifier *type, Expression *expression) :
                     Statement(mem, AstVariable, name, name), name(name), typeSpecifier(type), expression(expression) {}
-
-            virtual ~Variable() {
-                if (typeSpecifier) mem.freeObject(typeSpecifier, __FILE__, __LINE__);
-                if (expression) mem.freeObject(expression, __FILE__, __LINE__);
-            }
 
             void print(int indent) {
                 printf("%*s", indent, "");
@@ -154,18 +131,12 @@ namespace qak {
 
         struct While : public Statement {
             Expression *condition;
-            Array<Statement *> statements;
+            FixedArray<Statement *> statements;
 
-            While(HeapAllocator &mem, Span start, Span end, Expression *condition, Array<Statement *> &statements) :
+            While(BumpAllocator &bumpMem, HeapAllocator &mem, Span start, Span end, Expression *condition, Array<Statement *> &statements) :
                     Statement(mem, AstWhile, start, end),
                     condition(condition),
-                    statements(mem) {
-                this->statements.addAll(statements);
-            }
-
-            virtual ~While() {
-                mem.freeObject(condition, __FILE__, __LINE__);
-                statements.freeObjects();
+                    statements(bumpMem, statements) {
             }
 
             // BOZO print
@@ -173,22 +144,14 @@ namespace qak {
 
         struct If : public Statement {
             Expression *condition;
-            Array<Statement *> trueBlock;
-            Array<Statement *> falseBlock;
+            FixedArray<Statement *> trueBlock;
+            FixedArray<Statement *> falseBlock;
 
-            If(HeapAllocator &mem, Span start, Span end, Expression *condition, Array<Statement *> &trueBlock, Array<Statement *> &falseBlock) :
+            If(BumpAllocator &bumpMem, HeapAllocator &mem, Span start, Span end, Expression *condition, Array<Statement *> &trueBlock, Array<Statement *> &falseBlock) :
                     Statement(mem, AstIf, start, end),
                     condition(condition),
-                    trueBlock(mem),
-                    falseBlock(mem) {
-                this->trueBlock.addAll(trueBlock);
-                this->falseBlock.addAll(falseBlock);
-            }
-
-            virtual ~If() {
-                mem.freeObject(condition, __FILE__, __LINE__);
-                trueBlock.freeObjects();
-                falseBlock.freeObjects();
+                    trueBlock(bumpMem, trueBlock),
+                    falseBlock(bumpMem, falseBlock) {
             }
 
             // BOZO print
@@ -198,10 +161,6 @@ namespace qak {
             Expression *returnValue;
 
             Return(HeapAllocator &mem, Span start, Span end, Expression *returnValue) : Statement(mem, AstReturn, start, end), returnValue(returnValue) {}
-
-            virtual ~Return() {
-                if (returnValue) mem.freeObject(returnValue, __FILE__, __LINE__);
-            }
 
             // BOZO print
         };
@@ -216,12 +175,6 @@ namespace qak {
                     condition(condition),
                     trueValue(trueValue),
                     falseValue(falseValue) {}
-
-            virtual ~TernaryOperation() {
-                mem.freeObject(condition, __FILE__, __LINE__);
-                mem.freeObject(trueValue, __FILE__, __LINE__);
-                mem.freeObject(falseValue, __FILE__, __LINE__);
-            }
 
             void print(int indent) {
                 printf("%*s", indent, "");
@@ -241,11 +194,6 @@ namespace qak {
                                                                                                 op(op), left(left),
                                                                                                 right(right) {}
 
-            virtual ~BinaryOperation() {
-                mem.freeObject(left, __FILE__, __LINE__);
-                mem.freeObject(right, __FILE__, __LINE__);
-            }
-
             void print(int indent) {
                 printf("%*s", indent, "");
                 printf("Binary op: %s\n", op.toCString(mem));
@@ -259,10 +207,6 @@ namespace qak {
             Expression *expression;
 
             UnaryOperation(HeapAllocator &mem, Span op, Expression *expression) : Expression(mem, AstUnaryOperation, op, op), op(op), expression(expression) {}
-
-            virtual ~UnaryOperation() {
-                mem.freeObject(expression, __FILE__, __LINE__);
-            }
 
             void print(int indent) {
                 printf("%*s", indent, "");
@@ -297,10 +241,7 @@ namespace qak {
                     statements(mem) {
             }
 
-            virtual ~Module() {
-                functions.freeObjects();
-                statements.freeObjects();
-            }
+            virtual ~Module() { }
 
             void print() {
                 print(0);
@@ -327,15 +268,32 @@ namespace qak {
 
     struct Parser {
     private:
+        BumpAllocator &_bumpMem;
         HeapAllocator &_mem;
         Source *_source;
         TokenStream *_stream;
+        Array<Token> _tokens;
         Errors *_errors;
+        Array<Array<ast::Statement *>*> _statementArrayPool;
+        Array<Array<ast::Parameter *>*> _parameterArrayPool;
 
     public:
-        Parser(HeapAllocator &mem) : _mem(mem), _source(nullptr), _stream(nullptr), _errors(nullptr) {}
+        Parser(BumpAllocator &bumpMem, HeapAllocator &mem) :
+        _bumpMem(bumpMem), _mem(mem),
+        _source(nullptr),
+        _stream(nullptr), _tokens(mem),
+        _errors(nullptr),
+        _statementArrayPool(mem),
+        _parameterArrayPool(mem) {}
 
-        ast::Module *parse(Source source, Errors &errors);
+        ~Parser() {
+            _statementArrayPool.freeObjects();
+            _parameterArrayPool.freeObjects();
+        }
+
+        ast::Module *parse(Source &source, Errors &errors);
+
+    private:
 
         ast::Module *parseModule();
 
@@ -362,6 +320,36 @@ namespace qak {
         ast::Expression *parseAccessOrCallOrLiteral();
 
         ast::Expression *parseAccessOrCall();
+
+        Array<ast::Statement *> *obtainStatementArray() {
+            if (_statementArrayPool.size() == 0) {
+                return _mem.allocObject<Array<ast::Statement *>>(__FILE__, __LINE__, _mem);
+            } else {
+                Array<ast::Statement*> *array = _statementArrayPool[_statementArrayPool.size() - 1];
+                _statementArrayPool.removeAt(_statementArrayPool.size() - 1);
+                return array;
+            }
+        }
+
+        void freeStatementArray(Array<ast::Statement *> *array) {
+            array->clear();
+            _statementArrayPool.add(array);
+        }
+
+        Array<ast::Parameter *> *obtainParametersArray() {
+            if (_parameterArrayPool.size() == 0) {
+                return _mem.allocObject<Array<ast::Parameter *>>(__FILE__, __LINE__, _mem);
+            } else {
+                Array<ast::Parameter*> *array = _parameterArrayPool[_parameterArrayPool.size() - 1];
+                _parameterArrayPool.removeAt(_parameterArrayPool.size() - 1);
+                return array;
+            }
+        }
+
+        void freeParameterArray(Array<ast::Parameter *> *array) {
+            array->clear();
+            _parameterArrayPool.add(array);
+        }
     };
 }
 
