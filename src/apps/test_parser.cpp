@@ -51,19 +51,20 @@ void testExpression() {
     BumpAllocator bumpMem;
     HeapAllocator mem;
 
-    Source *source = io::readFile("data/parser_expression.qak", mem);
-    QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_expression.qak");
+    {
+        Source *source = io::readFile("data/parser_expression.qak", mem);
+        QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_expression.qak");
+        Parser parser(bumpMem, mem);
+        Errors errors(mem);
+        Module *module = parser.parse(*source, errors);
+        if (errors.hasErrors()) errors.print();
+        QAK_CHECK(module, "Expected module, got nullptr.");
+        mem.freeObject(module, __FILE__, __LINE__);
+        mem.freeObject(source, __FILE__, __LINE__);
+    }
 
-    Parser parser(bumpMem, mem);
-    Errors errors(mem);
-    Module *module = parser.parse(*source, errors);
-    if (errors.hasErrors()) errors.print();
-    QAK_CHECK(module, "Expected module, got nullptr.");
-
-    mem.freeObject(module, __FILE__, __LINE__);
-    mem.freeObject(source, __FILE__, __LINE__);
-    if (mem.numAllocations() != 3) mem.printAllocations();
-    QAK_CHECK(mem.numAllocations() == 3, "Expected all memory to be deallocated, but %zu allocations remaining.", mem.numAllocations());
+    if (mem.numAllocations() != 0) mem.printAllocations();
+    QAK_CHECK(mem.numAllocations() == 0, "Expected all memory to be deallocated, but %zu allocations remaining.", mem.numAllocations());
 }
 
 void testModuleVariable() {
