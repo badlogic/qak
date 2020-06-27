@@ -359,8 +359,8 @@ Token *TokenStream::expect(TokenType type) {
 
 /** Checks if the next token matches the given text and optionally consumes, or throws an error if the next token did not match
  * the text. */
-Token *TokenStream::expect(const char *text) {
-    bool result = match(text, true);
+Token *TokenStream::expect(const char *text, u4 len) {
+    bool result = match(text, len, true);
     if (!result) {
         Token *token = (u8) index < tokens.size() ? &tokens[index] : nullptr;
         Span *span = token != nullptr ? &token->span : nullptr;
@@ -387,9 +387,9 @@ bool TokenStream::match(TokenType type, bool consume) {
 }
 
 /** Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
-bool TokenStream::match(const char *text, bool consume) {
+bool TokenStream::match(const char *text, u4 len, bool consume) {
     if (index >= end) return false;
-    if (tokens[index].match(text)) {
+    if (tokens[index].match(text, len)) {
         if (consume) index++;
         return true;
     }

@@ -4,6 +4,8 @@
 #include "array.h"
 #include "error.h"
 
+#define QAK_STRING_WITH_LEN(str) str, sizeof(str) - 1
+
 namespace qak {
     struct CharacterStream {
         Source &source;
@@ -90,8 +92,7 @@ namespace qak {
         TokenType type;
         Span span;
 
-        bool match(const char *needle) {
-            size_t len = strlen(needle);
+        bool match(const char *needle, u4 len) {
             if (span.getLength() != len) return false;
             const u1 *sourceData = span.source.buffer.data + span.start;
             for (u4 i = 0; i < len; i++) {
@@ -129,13 +130,13 @@ namespace qak {
 
         /** Checks if the next token matches the given text and optionally consumes, or throws an error if the next token did not match
          * the text. */
-        Token *expect(const char *text);
+        Token *expect(const char *text, u4 len);
 
         /** Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
         bool match(TokenType type, bool consume);
 
         /** Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
-        bool match(const char *text, bool consume);
+        bool match(const char *text, u4 len, bool consume);
     };
 
     namespace tokenizer {
