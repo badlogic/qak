@@ -216,7 +216,7 @@ namespace qak {
         void tokenize(Source &source, Array<Token> &tokens, Errors &errors);
 
         const char *tokenTypeToString(TokenType type);
-    };
+    }
 
     struct TokenStream {
         Source &source;

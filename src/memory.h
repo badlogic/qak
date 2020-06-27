@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include <map>
+#include <string.h>
 
 // Default block size of the BumpAllocator
 #define QAK_BLOCK_SIZE (512 * 16)
@@ -101,7 +102,7 @@ namespace qak {
                     printf("%s:%i (%zu bytes at %p)\n", it->second.fileName, it->second.line, it->second.size, it->second.address);
                     totalSize += it->second.size;
                 }
-                printf("Total memory: %llu, #allocations: %lu\n", totalSize, _allocations.size());
+                printf("Total memory: %llu, #allocations: %lu\n", (unsigned long long)totalSize, _allocations.size());
             } else {
                 printf("No allocations.");
             }

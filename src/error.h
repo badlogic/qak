@@ -12,9 +12,8 @@ namespace qak {
     struct Error {
         Span span;
         const char *message;
-        Array <Line> lines;
 
-        Error(Span span, const char *message) : span(span), message(message), lines(span.source.mem) {}
+        Error(Span span, const char *message) : span(span), message(message) {}
 
         Line &getLine() {
             return span.source.lines()[span.startLine];
@@ -23,7 +22,7 @@ namespace qak {
         void print() {
             HeapAllocator mem;
             Line &line = getLine();
-            uint8_t *lineStr = lineStr = mem.alloc<uint8_t>(line.length() + 1, __FILE__, __LINE__);
+            uint8_t *lineStr = mem.alloc<uint8_t>(line.length() + 1, __FILE__, __LINE__);
             if (line.length() > 0) memcpy(lineStr, span.source.data + line.start, line.length());
             lineStr[line.length()] = 0;
 
