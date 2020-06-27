@@ -294,6 +294,15 @@ namespace qak {
         }
 
         /** Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
+        QAK_FORCE_INLINE bool unsafeMatch(TokenType type, bool consume) {
+            if (tokens[index].type == type) {
+                if (consume) index++;
+                return true;
+            }
+            return false;
+        }
+
+        /** Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
         QAK_FORCE_INLINE bool match(const char *text, uint32_t len, bool consume) {
             if (index >= end) return false;
             if (tokens[index].match(text, len)) {

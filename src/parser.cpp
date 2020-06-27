@@ -227,24 +227,35 @@ Expression *Parser::parseUnaryOperator() {
 }
 
 Expression *Parser::parseAccessOrCallOrLiteral() {
-    if (_stream->match(StringLiteral, false) ||
-        _stream->match(BooleanLiteral, false) ||
-        _stream->match(DoubleLiteral, false) ||
-        _stream->match(FloatLiteral, false) ||
-        _stream->match(ByteLiteral, false) ||
-        _stream->match(ShortLiteral, false) ||
-        _stream->match(IntegerLiteral, false) ||
-        _stream->match(LongLiteral, false) ||
-        _stream->match(CharacterLiteral, false) ||
-        _stream->match(NullLiteral, false)) {
-        Token *token = _stream->consume();
-        Literal *literal = _bumpMem.allocObject<Literal>(token->type, token->span);
-        return literal;
-    } else if (_stream->match(Identifier, false)) {
-        return parseAccessOrCall();
-    } else {
+    if (!_stream->hasMore()) {
         _errors->add(_stream->peek()->span, "Expected a variable, field, array, function call, method call, or literal.");
         return nullptr;
+    }
+
+    TokenType tokenType = _stream->peek()->type;
+
+    switch (tokenType) {
+        case StringLiteral:
+        case BooleanLiteral:
+        case DoubleLiteral:
+        case FloatLiteral:
+        case ByteLiteral:
+        case ShortLiteral:
+        case IntegerLiteral:
+        case LongLiteral:
+        case CharacterLiteral:
+        case NullLiteral: {
+            Token *token = _stream->consume();
+            Literal *literal = _bumpMem.allocObject<Literal>(token->type, token->span);
+            return literal;
+        }
+
+        case Identifier:
+            return parseAccessOrCall();
+            
+        default:
+            _errors->add(_stream->peek()->span, "Expected a variable, field, array, function call, method call, or literal.");
+            return nullptr;
     }
 }
 
