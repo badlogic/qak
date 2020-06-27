@@ -1,4 +1,5 @@
 #include "error.h"
+#include <cstdarg>
 
 using namespace qak;
 
