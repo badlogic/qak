@@ -87,11 +87,13 @@ namespace qak {
             return (const char *) cString;
         }
 
-        bool match(const char *str, size_t len) {
-            uint8_t *sourceData = source.data;
+        /** Returns whether the span text matches the needle. **/
+        QAK_FORCE_INLINE bool match(const char *needle, uint32_t len) {
             if (end - start != len) return false;
-            for (uint32_t i = start, j = 0, n = end; i < n && str[j] != 0; i++, j++) {
-                if (sourceData[i] != str[j]) return false;
+
+            const uint8_t *sourceData = source.data + start;
+            for (uint32_t i = 0; i < len; i++) {
+                if (sourceData[i] != needle[i]) return false;
             }
             return true;
         }

@@ -7,6 +7,14 @@
 #define QAK_STR(str) str, sizeof(str) - 1
 
 namespace qak {
+
+    /**
+     * A CharacterStream is used to traverse a UTF-8 Source. The stream
+     * keeps track of the current position within the Source.
+     *
+     * The stream provides various method to check and/or consume the next
+     * character in the source.
+     */
     struct CharacterStream {
         Source &source;
         uint32_t index;
@@ -39,14 +47,18 @@ namespace qak {
         CharacterStream(Source &source) : source(source), index(0), line(1), end(source.size), spanStart(0), spanLineStart(1) {
         }
 
+        /** Returns whether the stream has more UTF-8 characters **/
         QAK_FORCE_INLINE bool hasMore() {
             return index < end;
         }
 
+        /** Returns the current UTF-8 character and advances to the next character **/
         QAK_FORCE_INLINE uint32_t consume() {
             return nextUtf8Character(source.data, &index);
         }
 
+        /** Returns true if the current UTF-8 character matches the needle, false otherwise.
+         * Advances to the next character if consume is true **/
         QAK_FORCE_INLINE bool match(const char *needleData, bool consume) {
             uint32_t needleLength = 0;
             const uint8_t *sourceData = source.data;
@@ -59,6 +71,8 @@ namespace qak {
             return true;
         }
 
+        /** Returns true if the current UTF-8 character is a digit ([0-9]), false otherwise.
+         * Advances to the next character if consume is true **/
         QAK_FORCE_INLINE bool matchDigit(bool consume) {
             if (!hasMore()) return false;
             uint8_t c = source.data[index];
@@ -69,6 +83,8 @@ namespace qak {
             return false;
         }
 
+        /** Returns true if the current UTF-8 character is a hex-digit ([0-9a-z]), false otherwise.
+         * Advances to the next character if consume is true **/
         QAK_FORCE_INLINE bool matchHex(bool consume) {
             if (!hasMore()) return false;
             uint8_t c = source.data[index];
@@ -79,6 +95,9 @@ namespace qak {
             return false;
         }
 
+        /** Returns true if the current UTF-8 character is valid as the first character
+         * of an identifier ([a-zA-Z_] or any unicode character >= 0xc0), e.g. variable
+         * name, false otherwise. Advances to the next character if consume is true **/
         QAK_FORCE_INLINE bool matchIdentifierStart(bool consume) {
             if (!hasMore()) return false;
             uint32_t idx = index;
@@ -90,6 +109,9 @@ namespace qak {
             return false;
         }
 
+        /** Returns true if the current UTF-8 character is valid as the first character
+         * of an identifier ([a-zA-Z_] or any unicode character >= 0x80), e.g. variable
+         * name, false otherwise. Advances to the next character if consume is true **/
         QAK_FORCE_INLINE bool matchIdentifierPart(bool consume) {
             if (!hasMore()) return false;
             uint32_t idx = index;
@@ -101,6 +123,8 @@ namespace qak {
             return false;
         }
 
+        /** Skips all white space characters ([' '\r\n\t]) and single-line comments.
+         * Comments start with '#' and end at the end of the current line. */
         QAK_FORCE_INLINE void skipWhiteSpace() {
             const uint8_t *sourceData = source.data;
             while (true) {
@@ -131,21 +155,32 @@ namespace qak {
             }
         }
 
+        /* Keep track of a Span starting at the current position in the stream **/
         QAK_FORCE_INLINE void startSpan() {
             spanStart = index;
             spanLineStart = line;
         }
 
+        /** Return the Span ending at the current position, previously started via
+         * startSpan(). Calls to startSpan() and endSpan() must match. They can
+         * not be nested.*/
         QAK_FORCE_INLINE Span endSpan() {
             return {source, spanStart, spanLineStart, index, line};
         }
-
-        bool isSpanEmpty() {
-            return spanStart == index;
-        }
-
     };
 
+    /** Enum describing all token types understood by Qak.
+     *
+     * "Simple" token types
+     * are things like operators, brackets, etc. with a single literal representation.
+     * If two "simple" tokens start with the same character, the longer one must come
+     * first, e.g. "<=" must come before "<". The list of simple tokens is delimited by
+     * the enum value LastSimpleTokenType.
+     *
+     * Token types with more than one literal representation, e.g. identifiers of variables
+     * or floating point numbers, come after simple tokens. Their order in the enum is not
+     * important.
+     */
     enum TokenType {
         // Simple tokens, sorted by literal length. Longer literals first.
         // The list of simple tokens is terminated via LastSimpleTokenType.
@@ -194,53 +229,54 @@ namespace qak {
         Identifier
     };
 
-    struct Token {
+    /** A token with a TokenType and position in the Source expressed by a Span. **/
+    struct Token : public Span {
         TokenType type;
-        Span span;
 
-        QAK_FORCE_INLINE bool match(const char *needle, uint32_t len) {
-            if (span.length() != len) return false;
-            const uint8_t *sourceData = span.source.data + span.start;
-            for (uint32_t i = 0; i < len; i++) {
-                if (sourceData[i] != needle[i]) return false;
-            }
-            return true;
-        }
-
-        const char *toCString(HeapAllocator &mem) {
-            return span.toCString(mem);
-        }
+        Token(TokenType type, Span span): Span(span), type(type) {}
     };
 
     namespace tokenizer {
+        /** Tokenizes the Source and returns the found tokens in the tokens array.
+         * Errors that occured during parsing are stored in the Errors instance. */
         void tokenize(Source &source, Array<Token> &tokens, Errors &errors);
 
+        /** Returns a string representation for the token type, e.g. TokenType::Identifier
+         * returns "Identifier". */
         const char *tokenTypeToString(TokenType type);
     }
 
-    struct TokenStream {
-        Source &source;
-        Array<Token> &tokens;
-        Errors &errors;
-        int index;
-        int end;
+    /**
+     * A TokenStream is used to traverse a list of Tokens The stream
+     * keeps track of the current token.
+     *
+     * The stream provides various method to match and/or consume the next
+     * token.
+     */
+    class TokenStream {
+    private:
+        Source &_source;
+        Array<Token> &_tokens;
+        Errors &_errors;
+        size_t _index;
 
-        TokenStream(Source &source, Array<Token> &tokens, Errors &errors) : source(source), tokens(tokens), errors(errors), index(0), end(tokens.size()) {}
+    public:
+        TokenStream(Source &source, Array<Token> &tokens, Errors &errors) : _source(source), _tokens(tokens), _errors(errors), _index(0) {}
 
         /** Returns whether there are more tokens in the stream. **/
         QAK_FORCE_INLINE bool hasMore() {
-            return index < end;
+            return _index < _tokens.size();
         }
 
         /** Consumes the next token and returns it. **/
         QAK_FORCE_INLINE Token *consume() {
             if (!hasMore()) return nullptr;
-            return &tokens[index++];
+            return &_tokens[_index++];
         }
 
         QAK_FORCE_INLINE Token *peek() {
             if (!hasMore()) return nullptr;
-            return &tokens[index];
+            return &_tokens[_index];
         }
 
         /** Checks if the next token has the give type and optionally consumes, or throws an error if the next token did not match the
@@ -248,18 +284,17 @@ namespace qak {
         QAK_FORCE_INLINE Token *expect(TokenType type) {
             bool result = match(type, true);
             if (!result) {
-                Token *token = (uint64_t) index < tokens.size() ? &tokens[index] : nullptr;
-                Span *span = token != nullptr ? &token->span : nullptr;
-                if (span == nullptr)
-                    errors.add({source, (uint32_t) source.size - 1, (uint32_t) source.lines().size() + 1, (uint32_t) source.size - 1,
-                                (uint32_t) source.lines().size() + 1}, "Expected '%s', but reached the end of the source.", tokenizer::tokenTypeToString(type));
+                Token *token = (uint64_t) _index < _tokens.size() ? &_tokens[_index] : nullptr;
+                if (token == nullptr)
+                    _errors.add({_source, (uint32_t) _source.size - 1, (uint32_t) _source.lines().size() + 1, (uint32_t) _source.size - 1,
+                                (uint32_t) _source.lines().size() + 1}, "Expected '%s', but reached the end of the source.", tokenizer::tokenTypeToString(type));
                 else {
                     HeapAllocator mem;
-                    errors.add(*span, "Expected '%s', but got '%s'", tokenizer::tokenTypeToString(type), token->toCString(mem));
+                    _errors.add(*token, "Expected '%s', but got '%s'", tokenizer::tokenTypeToString(type), token->toCString(mem));
                 }
                 return nullptr;
             } else {
-                return &tokens[index - 1];
+                return &_tokens[_index - 1];
             }
         }
 
@@ -268,35 +303,25 @@ namespace qak {
         QAK_FORCE_INLINE Token *expect(const char *text, uint32_t len) {
             bool result = match(text, len, true);
             if (!result) {
-                Token *token = (uint64_t) index < tokens.size() ? &tokens[index] : nullptr;
-                Span *span = token != nullptr ? &token->span : nullptr;
-                if (span == nullptr) {
-                    errors.add({source, (uint32_t) source.size - 1, (uint32_t) source.lines().size() + 1, (uint32_t) source.size - 1,
-                                (uint32_t) source.lines().size() + 1}, "Expected '%s', but reached the end of the source.", text);
+                Token *token = (uint64_t) _index < _tokens.size() ? &_tokens[_index] : nullptr;
+                if (token == nullptr) {
+                    _errors.add({_source, (uint32_t) _source.size - 1, (uint32_t) _source.lines().size() + 1, (uint32_t) _source.size - 1,
+                                (uint32_t) _source.lines().size() + 1}, "Expected '%s', but reached the end of the source.", text);
                 } else {
                     HeapAllocator mem;
-                    errors.add(*span, "Expected '%s', but got '%s'", text, token->toCString(mem));
+                    _errors.add(*token, "Expected '%s', but got '%s'", text, token->toCString(mem));
                 }
                 return nullptr;
             } else {
-                return &tokens[index - 1];
+                return &_tokens[_index - 1];
             }
         }
 
         /** Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
         QAK_FORCE_INLINE bool match(TokenType type, bool consume) {
-            if (index >= end) return false;
-            if (tokens[index].type == type) {
-                if (consume) index++;
-                return true;
-            }
-            return false;
-        }
-
-        /** Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
-        QAK_FORCE_INLINE bool unsafeMatch(TokenType type, bool consume) {
-            if (tokens[index].type == type) {
-                if (consume) index++;
+            if (_index >= _tokens.size()) return false;
+            if (_tokens[_index].type == type) {
+                if (consume) _index++;
                 return true;
             }
             return false;
@@ -304,9 +329,9 @@ namespace qak {
 
         /** Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
         QAK_FORCE_INLINE bool match(const char *text, uint32_t len, bool consume) {
-            if (index >= end) return false;
-            if (tokens[index].match(text, len)) {
-                if (consume) index++;
+            if (_index >= _tokens.size()) return false;
+            if (_tokens[_index].match(text, len)) {
+                if (consume) _index++;
                 return true;
             }
             return false;

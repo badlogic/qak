@@ -42,7 +42,7 @@ Module *Parser::parseModule() {
     Token *moduleName = _stream->expect(Identifier);
     if (!moduleName) return nullptr;
 
-    Module *module = _mem.allocObject<Module>(__FILE__, __LINE__, _mem, moduleName->span);
+    Module *module = _mem.allocObject<Module>(__FILE__, __LINE__, _mem, *moduleName);
     return module;
 }
 
@@ -70,7 +70,7 @@ Function *Parser::parseFunction() {
 
     if (!_stream->expect(QAK_STR("end"))) return nullptr;
 
-    Function *function = _bumpMem.allocObject<Function>(_bumpMem, name->span, *parameters, returnType, *statements);
+    Function *function = _bumpMem.allocObject<Function>(_bumpMem, *name, *parameters, returnType, *statements);
     freeStatementArray(statements);
     freeParameterArray(parameters);
     return function;
@@ -97,7 +97,7 @@ ast::Parameter *Parser::parseParameter() {
     TypeSpecifier *type = parseTypeSpecifier();
     if (!type) return nullptr;
 
-    Parameter *parameter = _bumpMem.allocObject<Parameter>(name->span, type);
+    Parameter *parameter = _bumpMem.allocObject<Parameter>(*name, type);
     return parameter;
 }
 
@@ -131,7 +131,7 @@ Variable *Parser::parseVariable() {
         if (!expression) return nullptr;
     }
 
-    Variable *variable = _bumpMem.allocObject<Variable>(name->span, type, expression);
+    Variable *variable = _bumpMem.allocObject<Variable>(*name, type, expression);
     return variable;
 }
 
@@ -139,7 +139,7 @@ TypeSpecifier *Parser::parseTypeSpecifier() {
     Token *name = _stream->expect(Identifier);
     if (!name) return nullptr;
 
-    TypeSpecifier *type = _bumpMem.allocObject<TypeSpecifier>(name->span);
+    TypeSpecifier *type = _bumpMem.allocObject<TypeSpecifier>(*name);
     return type;
 }
 
@@ -194,7 +194,7 @@ Expression *Parser::parseBinaryOperator(uint32_t level) {
         Expression *right = nextLevel == OPERATOR_NUM_GROUPS ? parseUnaryOperator() : parseBinaryOperator(nextLevel);
         if (right == nullptr) return nullptr;
 
-        left = _bumpMem.allocObject<BinaryOperation>(opToken->span, left, right);
+        left = _bumpMem.allocObject<BinaryOperation>(*opToken, left, right);
     }
     return left;
 }
@@ -211,7 +211,7 @@ Expression *Parser::parseUnaryOperator() {
         Token *op = _stream->consume();
         Expression *expression = parseUnaryOperator();
         if (!expression) return nullptr;
-        UnaryOperation *operation = _bumpMem.allocObject<UnaryOperation>(op->span, expression);
+        UnaryOperation *operation = _bumpMem.allocObject<UnaryOperation>(*op, expression);
         return operation;
     } else {
         if (_stream->match(QAK_STR("("), true)) {
@@ -228,7 +228,7 @@ Expression *Parser::parseUnaryOperator() {
 
 Expression *Parser::parseAccessOrCallOrLiteral() {
     if (!_stream->hasMore()) {
-        _errors->add(_stream->peek()->span, "Expected a variable, field, array, function call, method call, or literal.");
+        _errors->add(*_stream->peek(), "Expected a variable, field, array, function call, method call, or literal.");
         return nullptr;
     }
 
@@ -246,7 +246,7 @@ Expression *Parser::parseAccessOrCallOrLiteral() {
         case CharacterLiteral:
         case NullLiteral: {
             Token *token = _stream->consume();
-            Literal *literal = _bumpMem.allocObject<Literal>(token->type, token->span);
+            Literal *literal = _bumpMem.allocObject<Literal>(token->type, *token);
             return literal;
         }
 
@@ -254,12 +254,12 @@ Expression *Parser::parseAccessOrCallOrLiteral() {
             return parseAccessOrCall();
 
         default:
-            _errors->add(_stream->peek()->span, "Expected a variable, field, array, function call, method call, or literal.");
+            _errors->add(*_stream->peek(), "Expected a variable, field, array, function call, method call, or literal.");
             return nullptr;
     }
 }
 
 Expression *Parser::parseAccessOrCall() {
-    _errors->add(_stream->peek()->span, "Parsing of variable access or call not implemented.");
+    _errors->add(*_stream->peek(), "Parsing of variable access or call not implemented.");
     return nullptr;
 }
