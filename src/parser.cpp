@@ -19,7 +19,7 @@ Module *Parser::parse(Source &source, Errors &errors) {
     if (!module) return nullptr;
 
     while (_stream->hasMore()) {
-        if (_stream->match(QAK_STRING_WITH_LEN("fun"), false)) {
+        if (_stream->match(QAK_STR("fun"), false)) {
             Function *function = parseFunction();
             if (!function) return nullptr;
 
@@ -36,7 +36,7 @@ Module *Parser::parse(Source &source, Errors &errors) {
 }
 
 Module *Parser::parseModule() {
-    Token *moduleKeyword = _stream->expect(QAK_STRING_WITH_LEN("module"));
+    Token *moduleKeyword = _stream->expect(QAK_STR("module"));
     if (!moduleKeyword) return nullptr;
 
     Token *moduleName = _stream->expect(Identifier);
@@ -47,7 +47,7 @@ Module *Parser::parseModule() {
 }
 
 Function *Parser::parseFunction() {
-    _stream->expect(QAK_STRING_WITH_LEN("fun"));
+    _stream->expect(QAK_STR("fun"));
 
     Token *name = _stream->expect(Identifier);
     if (!name) return nullptr;
@@ -56,19 +56,19 @@ Function *Parser::parseFunction() {
     if (!parseParameters(*parameters)) return nullptr;
 
     TypeSpecifier *returnType = nullptr;
-    if (_stream->match(QAK_STRING_WITH_LEN(":"), true)) {
+    if (_stream->match(QAK_STR(":"), true)) {
         returnType = parseTypeSpecifier();
         if (!returnType) return nullptr;
     }
 
     Array<Statement *> *statements = obtainStatementArray();
-    while (_stream->hasMore() && !_stream->match(QAK_STRING_WITH_LEN("end"), false)) {
+    while (_stream->hasMore() && !_stream->match(QAK_STR("end"), false)) {
         Statement *statement = parseStatement();
         if (!statement) return nullptr;
         statements->add(statement);
     }
 
-    if (!_stream->expect(QAK_STRING_WITH_LEN("end"))) return nullptr;
+    if (!_stream->expect(QAK_STR("end"))) return nullptr;
 
     Function *function = _bumpMem.allocObject<Function>(_bumpMem, name->span, *parameters, returnType, *statements);
     freeStatementArray(statements);
@@ -77,7 +77,7 @@ Function *Parser::parseFunction() {
 }
 
 bool Parser::parseParameters(Array<Parameter *> &parameters) {
-    if (!_stream->expect(QAK_STRING_WITH_LEN("("))) return false;
+    if (!_stream->expect(QAK_STR("("))) return false;
 
     while (_stream->match(Identifier, false)) {
         Parameter *parameter = parseParameter();
@@ -85,15 +85,15 @@ bool Parser::parseParameters(Array<Parameter *> &parameters) {
 
         parameters.add(parameter);
 
-        if (!_stream->match(QAK_STRING_WITH_LEN(","), true)) break;
+        if (!_stream->match(QAK_STR(","), true)) break;
     }
 
-    return _stream->expect(QAK_STRING_WITH_LEN(")"));
+    return _stream->expect(QAK_STR(")"));
 }
 
 ast::Parameter *Parser::parseParameter() {
     Token *name = _stream->consume();
-    if (!_stream->expect(QAK_STRING_WITH_LEN(":"))) return nullptr;
+    if (!_stream->expect(QAK_STR(":"))) return nullptr;
     TypeSpecifier *type = parseTypeSpecifier();
     if (!type) return nullptr;
 
@@ -102,7 +102,7 @@ ast::Parameter *Parser::parseParameter() {
 }
 
 Statement *Parser::parseStatement() {
-    if (_stream->match(QAK_STRING_WITH_LEN("var"), false)) {
+    if (_stream->match(QAK_STR("var"), false)) {
         Variable *variable = parseVariable();
         if (!variable) return nullptr;
         return variable;
@@ -114,19 +114,19 @@ Statement *Parser::parseStatement() {
 }
 
 Variable *Parser::parseVariable() {
-    _stream->expect(QAK_STRING_WITH_LEN("var"));
+    _stream->expect(QAK_STR("var"));
 
     Token *name = _stream->expect(Identifier);
     if (!name) return nullptr;
 
     TypeSpecifier *type = nullptr;
-    if (_stream->match(QAK_STRING_WITH_LEN(":"), true)) {
+    if (_stream->match(QAK_STR(":"), true)) {
         type = parseTypeSpecifier();
         if (!type) return nullptr;
     }
 
     Expression *expression = nullptr;
-    if (_stream->match(QAK_STRING_WITH_LEN("="), true)) {
+    if (_stream->match(QAK_STR("="), true)) {
         expression = parseExpression();
         if (!expression) return nullptr;
     }
@@ -151,10 +151,10 @@ Expression *Parser::parseTernaryOperator() {
     Expression *condition = parseBinaryOperator(0);
     if (!condition) return nullptr;
 
-    if (_stream->match(QAK_STRING_WITH_LEN("?"), true)) {
+    if (_stream->match(QAK_STR("?"), true)) {
         Expression *trueValue = parseTernaryOperator();
         if (!trueValue) return nullptr;
-        if (!_stream->match(QAK_STRING_WITH_LEN(":"), true)) return nullptr;
+        if (!_stream->match(QAK_STR(":"), true)) return nullptr;
         Expression *falseValue = parseTernaryOperator();
         if (!falseValue) return nullptr;
         TernaryOperation *ternary = _bumpMem.allocObject<TernaryOperation>(condition, trueValue, falseValue);
@@ -214,10 +214,10 @@ Expression *Parser::parseUnaryOperator() {
         UnaryOperation *operation = _bumpMem.allocObject<UnaryOperation>(op->span, expression);
         return operation;
     } else {
-        if (_stream->match(QAK_STRING_WITH_LEN("("), true)) {
+        if (_stream->match(QAK_STR("("), true)) {
             Expression *expression = parseExpression();
             if (!expression) return nullptr;
-            if (!_stream->expect(QAK_STRING_WITH_LEN(")"))) return nullptr;
+            if (!_stream->expect(QAK_STR(")"))) return nullptr;
             return expression;
         } else {
             return parseAccessOrCallOrLiteral();

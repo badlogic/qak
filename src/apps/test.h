@@ -9,9 +9,9 @@
 #ifdef __cplusplus
 namespace qak {
     struct Test {
-        const char* name;
+        const char *name;
 
-        Test(const char *name): name(name) {
+        Test(const char *name) : name(name) {
             printf("========= Test: %s\n", name);
         }
 

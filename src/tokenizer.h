@@ -4,14 +4,17 @@
 #include "array.h"
 #include "error.h"
 
-#define QAK_STRING_WITH_LEN(str) str, sizeof(str) - 1
+#define QAK_STR(str) str, sizeof(str) - 1
 
 namespace qak {
     struct CharacterStream {
         Source &source;
         uint32_t index;
+        uint32_t line;
         uint32_t end;
         uint32_t spanStart;
+        uint32_t spanLineStart;
+
 
         // Taken from https://www.cprogramming.com/tutorial/utf8.c
         static QAK_FORCE_INLINE uint32_t nextUtf8Character(const uint8_t *s, uint32_t *i) {
@@ -33,7 +36,7 @@ namespace qak {
             return ch;
         }
 
-        CharacterStream(Source &source) : source(source), index(0), end(source.size), spanStart(0) {
+        CharacterStream(Source &source) : source(source), index(0), line(1), end(source.size), spanStart(0), spanLineStart(1) {
         }
 
         QAK_FORCE_INLINE bool hasMore() {
@@ -103,28 +106,38 @@ namespace qak {
             while (true) {
                 if (index >= end) return;
                 uint8_t c = sourceData[index];
-                if (c == '#') {
-                    while (index < end && c != '\n') {
-                        c = sourceData[index];
-                        index++;
+                switch (c) {
+                    case '#': {
+                        while (index < end && c != '\n') {
+                            c = sourceData[index];
+                            index++;
+                        }
+                        continue;
                     }
-                    continue;
-                }
-                if (c == ' ' || c == '\n' || c == '\r' || c == '\t') {
-                    index++;
-                    continue;
-                } else {
-                    break;
+                    case ' ':
+                    case '\r':
+                    case '\t': {
+                        index++;
+                        continue;
+                    }
+                    case '\n': {
+                        index++;
+                        line++;
+                        continue;
+                    }
+                    default:
+                        return;
                 }
             }
         }
 
         QAK_FORCE_INLINE void startSpan() {
             spanStart = index;
+            spanLineStart = line;
         }
 
         QAK_FORCE_INLINE Span endSpan() {
-            return {source, spanStart, index};
+            return {source, spanStart, spanLineStart, index, line};
         }
 
         bool isSpanEmpty() {
@@ -186,7 +199,7 @@ namespace qak {
         Span span;
 
         QAK_FORCE_INLINE bool match(const char *needle, uint32_t len) {
-            if (span.getLength() != len) return false;
+            if (span.length() != len) return false;
             const uint8_t *sourceData = span.source.data + span.start;
             for (uint32_t i = 0; i < len; i++) {
                 if (sourceData[i] != needle[i]) return false;
@@ -238,7 +251,8 @@ namespace qak {
                 Token *token = (uint64_t) index < tokens.size() ? &tokens[index] : nullptr;
                 Span *span = token != nullptr ? &token->span : nullptr;
                 if (span == nullptr)
-                    errors.add({source, 0, 0}, "Expected '%s', but reached the end of the source.", tokenizer::tokenTypeToString(type));
+                    errors.add({source, (uint32_t) source.size - 1, (uint32_t) source.lines().size() + 1, (uint32_t) source.size - 1,
+                                (uint32_t) source.lines().size() + 1}, "Expected '%s', but reached the end of the source.", tokenizer::tokenTypeToString(type));
                 else {
                     HeapAllocator mem;
                     errors.add(*span, "Expected '%s', but got '%s'", tokenizer::tokenTypeToString(type), token->toCString(mem));
@@ -257,7 +271,8 @@ namespace qak {
                 Token *token = (uint64_t) index < tokens.size() ? &tokens[index] : nullptr;
                 Span *span = token != nullptr ? &token->span : nullptr;
                 if (span == nullptr) {
-                    errors.add({source, 0, 0}, "Expected '%s', but reached the end of the source.", text);
+                    errors.add({source, (uint32_t) source.size - 1, (uint32_t) source.lines().size() + 1, (uint32_t) source.size - 1,
+                                (uint32_t) source.lines().size() + 1}, "Expected '%s', but reached the end of the source.", text);
                 } else {
                     HeapAllocator mem;
                     errors.add(*span, "Expected '%s', but got '%s'", text, token->toCString(mem));

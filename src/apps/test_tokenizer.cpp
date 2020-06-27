@@ -8,7 +8,7 @@ void testBench() {
     Test test("Tokenizer - Benchmark");
     uint64_t start = io::timeMillis();
     HeapAllocator mem;
-    Source* source = io::readFile("data/tokens.qak", mem);
+    Source *source = io::readFile("data/tokens.qak", mem);
     QAK_CHECK(source != nullptr, "Couldn't read test file data/tokens.qak");
 
     Array<Token> tokens(mem);
@@ -42,7 +42,7 @@ void testTokenizer() {
 
     for (uint32_t i = 0; i < tokens.size(); i++) {
         Token &token = tokens[i];
-        printf("%s (%d:%d): %s\n", tokenizer::tokenTypeToString(token.type), token.span.start, token.span.end, token.toCString(mem));
+        printf("%s (%d:%d:%d): %s\n", tokenizer::tokenTypeToString(token.type), token.span.startLine, token.span.start, token.span.end, token.toCString(mem));
     }
 }
 

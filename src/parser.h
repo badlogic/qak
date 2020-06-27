@@ -28,9 +28,9 @@ namespace qak {
             AstType astType;
             Span span;
 
-            AstNode(AstType astType, Span start, Span end) : astType(astType), span(start.source, start.start, end.end) {}
+            AstNode(AstType astType, Span &start, Span &end) : astType(astType), span(start.source, start.start, start.startLine, end.end, end.endLine) {}
 
-            AstNode(AstType astType, Span span) : astType(astType), span(span) {}
+            AstNode(AstType astType, Span &span) : astType(astType), span(span) {}
 
             virtual ~AstNode() {}
 
@@ -193,8 +193,8 @@ namespace qak {
             Expression *right;
 
             BinaryOperation(Span op, Expression *left, Expression *right) : Expression(AstBinaryOperation, left->span, right->span),
-                                                                                                op(op), left(left),
-                                                                                                right(right) {}
+                                                                            op(op), left(left),
+                                                                            right(right) {}
 
             virtual void print(int indent, HeapAllocator &mem) {
                 printf("%*s", indent, "");
@@ -343,9 +343,9 @@ namespace qak {
 
         Array<ast::Parameter *> *obtainParametersArray() {
             if (_parameterArrayPool.size() == 0) {
-                return _mem.allocObject<Array<ast::Parameter *>>(__FILE__, __LINE__, _mem);
+                return _mem.allocObject < Array < ast::Parameter * >> (__FILE__, __LINE__, _mem);
             } else {
-                Array<ast::Parameter *> *array = _parameterArrayPool[_parameterArrayPool.size() - 1];
+                Array < ast::Parameter * > *array = _parameterArrayPool[_parameterArrayPool.size() - 1];
                 _parameterArrayPool.removeAt(_parameterArrayPool.size() - 1);
                 return array;
             }

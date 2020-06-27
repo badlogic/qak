@@ -160,7 +160,7 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
             }
             if (!matchedEndQuote) QAK_ERROR(stream.endSpan(), "String literal is not closed by double quote");
             Span stringSpan = stream.endSpan();
-            tokens.add({StringLiteral, Span(stringSpan.source, stringSpan.start - 1, stringSpan.end)});
+            tokens.add({StringLiteral, Span(stringSpan.source, stringSpan.start - 1, stringSpan.startLine, stringSpan.end, stringSpan.endLine)});
             continue;
         }
 
@@ -171,9 +171,9 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
             while (stream.matchIdentifierPart(true));
             Span identifier = stream.endSpan();
 
-            if (identifier.match("true") || identifier.match("false")) {
+            if (identifier.match(QAK_STR("true")) || identifier.match(QAK_STR("false"))) {
                 tokens.add({BooleanLiteral, identifier});
-            } else if (identifier.match("null")) {
+            } else if (identifier.match(QAK_STR("null"))) {
                 tokens.add({NullLiteral, identifier});
             } else {
                 tokens.add({Identifier, identifier});

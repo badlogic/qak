@@ -61,6 +61,7 @@ void testExpression() {
     QAK_CHECK(module, "Expected module, got nullptr.");
 
     mem.freeObject(module, __FILE__, __LINE__);
+    mem.freeObject(source, __FILE__, __LINE__);
     if (mem.numAllocations() != 3) mem.printAllocations();
     QAK_CHECK(mem.numAllocations() == 3, "Expected all memory to be deallocated, but %zu allocations remaining.", mem.numAllocations());
 }
