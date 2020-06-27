@@ -322,16 +322,6 @@ namespace qak {
             _variableArrayPool.add(array);
         }
 
-        Array<ast::Statement *> *obtainStatementArray() {
-            if (_statementArrayPool.size() == 0) {
-                return _mem.allocObject<Array<ast::Statement *>>(QAK_SRC_LOC, _mem);
-            } else {
-                Array<ast::Statement *> *array = _statementArrayPool[_statementArrayPool.size() - 1];
-                _statementArrayPool.removeAt(_statementArrayPool.size() - 1);
-                return array;
-            }
-        }
-
         Array<ast::Function *> *obtainFunctionArray() {
             if (_functionArrayPool.size() == 0) {
                 return _mem.allocObject<Array<ast::Function *>>(QAK_SRC_LOC, _mem);
@@ -345,6 +335,16 @@ namespace qak {
         void freeFunctionArray(Array<ast::Function *> *array) {
             array->clear();
             _functionArrayPool.add(array);
+        }
+
+        Array<ast::Statement *> *obtainStatementArray() {
+            if (_statementArrayPool.size() == 0) {
+                return _mem.allocObject<Array<ast::Statement *>>(QAK_SRC_LOC, _mem);
+            } else {
+                Array<ast::Statement *> *array = _statementArrayPool[_statementArrayPool.size() - 1];
+                _statementArrayPool.removeAt(_statementArrayPool.size() - 1);
+                return array;
+            }
         }
 
         void freeStatementArray(Array<ast::Statement *> *array) {

@@ -169,6 +169,7 @@ namespace qak {
 
         QAK_FORCE_INLINE void set(Array<T> &array) {
             if (array.size() > 0) {
+                _size = array.size();
                 _buffer = _mem.alloc<T>(_size);
                 for (size_t i = 0; i < _size; i++) {
                     new(_buffer + i) T(array[i]);
