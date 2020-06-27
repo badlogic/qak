@@ -1,5 +1,6 @@
 #include <cstdio>
-#include <sys/time.h>
+#define SOKOL_IMPL
+#include "3rdparty/sokol_time.h"
 #include "io.h"
 
 using namespace qak;
@@ -25,8 +26,13 @@ Buffer io::readFile(const char *fileName, HeapAllocator &mem) {
     return {mem, content, size};
 }
 
+static bool isTimeSetup = false;
+
 u8 io::timeMillis() {
-    timeval time;
-    gettimeofday(&time, NULL);
-    return u8(time.tv_sec) * 1000 + u8(time.tv_usec / 1000);
+    if (!isTimeSetup) {
+        stm_setup();
+        isTimeSetup = true;
+    }
+    uint64_t time = stm_now();
+    return stm_ms(time);
 }

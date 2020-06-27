@@ -95,8 +95,6 @@ namespace qak {
         }
 
         inline void removeAt(u8 inIndex) {
-            assert(inIndex < _size);
-
             --_size;
 
             if (inIndex != _size) {
@@ -131,8 +129,6 @@ namespace qak {
         }
 
         inline T &operator[](u8 inIndex) {
-            assert(inIndex < _size);
-
             return _buffer[inIndex];
         }
 
@@ -166,9 +162,6 @@ namespace qak {
 
         inline T *allocate(u8 n) {
             T *ptr = _mem.calloc<T>(n, __FILE__, __LINE__);
-
-            assert(ptr);
-
             return ptr;
         }
 
@@ -202,8 +195,6 @@ namespace qak {
         }
 
         inline T &operator[](u8 inIndex) {
-            assert(inIndex < _size);
-
             return _buffer[inIndex];
         }
 
