@@ -32,14 +32,6 @@ namespace qak {
             buffer->~T();
         }
 
-        template<typename E>
-        static QAK_FORCE_INLINE void freeObjects(Array<E *> &items) {
-            for (int i = (int) items.size() - 1; i >= 0; i--) {
-                items._mem.freeObject(items[i], __FILE__, __LINE__);
-            }
-            items._size = 0;
-        }
-
     public:
         Array(HeapAllocator &mem, size_t capacity = 0) : _mem(mem), _size(0), _capacity(0), _buffer(nullptr) {
             if (capacity > 0)
@@ -60,10 +52,13 @@ namespace qak {
         }
 
         QAK_FORCE_INLINE void freeObjects() {
-            Array::freeObjects(*this);
+            for (int32_t i = (int32_t) size() - 1; i >= 0; i--) {
+                _mem.freeObject(_buffer[i], __FILE__, __LINE__);
+            }
+            _size = 0;
         }
 
-        QAK_FORCE_INLINE uint64_t capacity() const {
+        QAK_FORCE_INLINE size_t capacity() const {
             return _capacity;
         }
 
@@ -75,12 +70,12 @@ namespace qak {
             size_t oldSize = _size;
             _size = newSize;
             if (_capacity < newSize) {
-                _capacity = (int) (_size * 1.75f);
+                _capacity = (size_t) (_size * 1.75f);
                 if (_capacity < 8) _capacity = 8;
                 _buffer = _mem.realloc<T>(_buffer, _capacity, __FILE__, __LINE__);
             }
             if (oldSize < _size) {
-                for (uint64_t i = oldSize; i < _size; i++) {
+                for (size_t i = oldSize; i < _size; i++) {
                     construct(_buffer + i, defaultValue);
                 }
             }
@@ -99,7 +94,7 @@ namespace qak {
                 // We thus need to create a defensive copy before
                 // reallocating.
                 T valueCopy = inValue;
-                _capacity = (int) (_size * 1.75f);
+                _capacity = (size_t) (_size * 1.75f);
                 if (_capacity < 8) _capacity = 8;
                 _buffer = _mem.realloc<T>(_buffer, _capacity, __FILE__, __LINE__);
                 construct(_buffer + _size++, valueCopy);
@@ -110,7 +105,7 @@ namespace qak {
 
         QAK_FORCE_INLINE void addAll(Array<T> &inValue) {
             ensureCapacity(this->size() + inValue.size());
-            for (uint64_t i = 0; i < inValue.size(); i++) {
+            for (size_t i = 0; i < inValue.size(); i++) {
                 add(inValue[i]);
             }
         }
@@ -119,7 +114,7 @@ namespace qak {
             --_size;
 
             if (inIndex != _size) {
-                for (uint64_t i = inIndex; i < _size; ++i) {
+                for (size_t i = inIndex; i < _size; ++i) {
                     T tmp(_buffer[i]);
                     _buffer[i] = _buffer[i + 1];
                     _buffer[i + 1] = tmp;
@@ -142,7 +137,7 @@ namespace qak {
         QAK_FORCE_INLINE int32_t indexOf(const T &inValue) {
             for (size_t i = 0; i < _size; ++i) {
                 if (_buffer[i] == inValue) {
-                    return (int) i;
+                    return (int32_t) i;
                 }
             }
 
@@ -169,17 +164,17 @@ namespace qak {
         FixedArray(BumpAllocator &mem, Array<T> &array) : _mem(mem), _size(array.size()) {
             if (array.size() > 0) {
                 _buffer = _mem.alloc<T>(_size);
-                for (uint64_t i = 0; i < _size; i++) {
+                for (size_t i = 0; i < _size; i++) {
                     new(_buffer + i) T(array[i]);
                 }
             }
         }
 
-        inline T &operator[](size_t inIndex) {
+        QAK_FORCE_INLINE T &operator[](size_t inIndex) {
             return _buffer[inIndex];
         }
 
-        inline size_t size() const {
+        QAK_FORCE_INLINE size_t size() const {
             return _size;
         }
     };

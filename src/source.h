@@ -22,7 +22,7 @@ namespace qak {
 
     struct Source {
     private:
-        Array <Line> _lines;
+        Array<Line> _lines;
 
         void scanLines() {
             if (_lines.size() != 0) return;
@@ -60,7 +60,7 @@ namespace qak {
             }
         }
 
-        Array <Line> &lines() {
+        Array<Line> &lines() {
             scanLines();
             return _lines;
         }

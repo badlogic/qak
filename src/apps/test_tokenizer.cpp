@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include "qak.h"
+#include "io.h"
+#include "tokenizer.h"
 #include "test.h"
 
 using namespace qak;

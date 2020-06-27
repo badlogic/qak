@@ -16,7 +16,7 @@ namespace qak {
     struct Test {
         const char *name;
 
-        Test(const char *name): name(name) {
+        Test(const char *name) : name(name) {
 #ifdef WIN32
             SetConsoleOutputCP(65001);
 #endif

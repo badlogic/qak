@@ -18,8 +18,7 @@ namespace qak {
 
         Allocation() : address(nullptr), size(0), fileName(nullptr), line(0) {}
 
-        Allocation(void *address, size_t size, const char *file, int32_t line) : address(address), size(size), fileName(file), line(line) {
-        }
+        Allocation(void *address, size_t size, const char *file, int32_t line) : address(address), size(size), fileName(file), line(line) {}
     };
 
     class HeapAllocator {
@@ -102,7 +101,7 @@ namespace qak {
                     printf("%s:%i (%zu bytes at %p)\n", it->second.fileName, it->second.line, it->second.size, it->second.address);
                     totalSize += it->second.size;
                 }
-                printf("Total memory: %llu, #allocations: %lu\n", (unsigned long long)totalSize, _allocations.size());
+                printf("Total memory: %llu, #allocations: %lu\n", (unsigned long long) totalSize, _allocations.size());
             } else {
                 printf("No allocations.");
             }

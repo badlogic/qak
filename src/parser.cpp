@@ -252,7 +252,7 @@ Expression *Parser::parseAccessOrCallOrLiteral() {
 
         case Identifier:
             return parseAccessOrCall();
-            
+
         default:
             _errors->add(_stream->peek()->span, "Expected a variable, field, array, function call, method call, or literal.");
             return nullptr;

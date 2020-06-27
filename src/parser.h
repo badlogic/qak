@@ -1,5 +1,3 @@
-
-
 #ifndef QAK_PARSER_H
 #define QAK_PARSER_H
 
@@ -243,11 +241,6 @@ namespace qak {
                     statements(mem) {
             }
 
-            virtual ~Module() {}
-
-            // BOZO AstNode::print and this should get a HeapAllocator
-            // for printing, so we can keep arenas separate for debugging
-            // memory leaks.
             void print(HeapAllocator &mem) {
                 print(0, mem);
             }
@@ -281,24 +274,6 @@ namespace qak {
         Errors *_errors;
         Array<Array<ast::Statement *> *> _statementArrayPool;
         Array<Array<ast::Parameter *> *> _parameterArrayPool;
-
-    public:
-        Parser(BumpAllocator &bumpMem, HeapAllocator &mem) :
-                _bumpMem(bumpMem), _mem(mem),
-                _source(nullptr),
-                _stream(nullptr), _tokens(mem),
-                _errors(nullptr),
-                _statementArrayPool(mem),
-                _parameterArrayPool(mem) {}
-
-        ~Parser() {
-            _statementArrayPool.freeObjects();
-            _parameterArrayPool.freeObjects();
-        }
-
-        ast::Module *parse(Source &source, Errors &errors);
-
-    private:
 
         ast::Module *parseModule();
 
@@ -343,9 +318,9 @@ namespace qak {
 
         Array<ast::Parameter *> *obtainParametersArray() {
             if (_parameterArrayPool.size() == 0) {
-                return _mem.allocObject < Array < ast::Parameter * >> (__FILE__, __LINE__, _mem);
+                return _mem.allocObject<Array<ast::Parameter * >>(__FILE__, __LINE__, _mem);
             } else {
-                Array < ast::Parameter * > *array = _parameterArrayPool[_parameterArrayPool.size() - 1];
+                Array<ast::Parameter *> *array = _parameterArrayPool[_parameterArrayPool.size() - 1];
                 _parameterArrayPool.removeAt(_parameterArrayPool.size() - 1);
                 return array;
             }
@@ -355,6 +330,22 @@ namespace qak {
             array->clear();
             _parameterArrayPool.add(array);
         }
+
+    public:
+        Parser(BumpAllocator &bumpMem, HeapAllocator &mem) :
+                _bumpMem(bumpMem), _mem(mem),
+                _source(nullptr),
+                _stream(nullptr), _tokens(mem),
+                _errors(nullptr),
+                _statementArrayPool(mem),
+                _parameterArrayPool(mem) {}
+
+        ~Parser() {
+            _statementArrayPool.freeObjects();
+            _parameterArrayPool.freeObjects();
+        }
+
+        ast::Module *parse(Source &source, Errors &errors);
     };
 }
 
