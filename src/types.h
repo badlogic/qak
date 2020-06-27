@@ -18,4 +18,6 @@
 #  endif /* __STDC_VERSION__ */
 #endif
 
+#define QAK_SRC_LOC __FILE__, __LINE__
+
 #endif //QAK_TYPES_H

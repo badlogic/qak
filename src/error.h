@@ -21,7 +21,7 @@ namespace qak {
 
     struct Errors {
         HeapAllocator &mem;
-        Array<Error> errors;
+        Array <Error> errors;
 
         Errors(HeapAllocator &mem) : mem(mem), errors(mem) {}
 
@@ -29,7 +29,7 @@ namespace qak {
 
         void add(Span span, const char *msg...);
 
-        Array<Error> &getErrors();
+        Array <Error> &getErrors();
 
         bool hasErrors();
 

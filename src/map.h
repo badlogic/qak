@@ -78,7 +78,7 @@ namespace qak {
                 MapEntry<K, V> *entry = _entries[i];
                 while (entry != nullptr) {
                     MapEntry<K, V> *next = entry->next;
-                    _mem.free(entry, __FILE__, __LINE__);
+                    _mem.free(entry, QAK_SRC_LOC);
                     entry = next;
                 }
             }
@@ -91,7 +91,7 @@ namespace qak {
 
             // No entries for that hash, add a new entry
             if (entry == nullptr) {
-                entry = new(_mem.alloc<MapEntry<K, V>>(1, __FILE__, __LINE__)) MapEntry<K, V>(key, value);
+                entry = new(_mem.alloc<MapEntry<K, V>>(1, QAK_SRC_LOC)) MapEntry<K, V>(key, value);
                 _entries[hash] = entry;
                 return;
             }
@@ -107,7 +107,7 @@ namespace qak {
             }
 
             // Didn't find key, add a new entry
-            entry = new(_mem.alloc<MapEntry<K, V>>(1, __FILE__, __LINE__)) MapEntry<K, V>(key, value);
+            entry = new(_mem.alloc<MapEntry<K, V>>(1, QAK_SRC_LOC)) MapEntry<K, V>(key, value);
             entry->next = _entries[hash];
             _entries[hash] = entry;
         }
@@ -134,7 +134,7 @@ namespace qak {
                         prevEntry->next = entry->next;
                     }
                     entry->~MapEntry<K, V>();
-                    _mem.free(entry, __FILE__, __LINE__);
+                    _mem.free(entry, QAK_SRC_LOC);
                     _size--;
                     break;
                 }

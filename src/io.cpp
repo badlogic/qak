@@ -21,10 +21,10 @@ Source *io::readFile(const char *fileName, HeapAllocator &mem) {
     size_t size = ftell(file);
     fseek(file, 0L, SEEK_SET);
 
-    uint8_t *data = mem.alloc<uint8_t>(size, __FILE__, __LINE__);
+    uint8_t *data = mem.alloc<uint8_t>(size, QAK_SRC_LOC);
     fread(data, sizeof(uint8_t), size, file);
     fclose(file);
-    return mem.allocObject<Source>(__FILE__, __LINE__, mem, fileName, data, size);
+    return mem.allocObject<Source>(QAK_SRC_LOC, mem, fileName, data, size);
 }
 
 static bool isTimeSetup = false;

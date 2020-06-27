@@ -42,7 +42,7 @@ Module *Parser::parseModule() {
     Token *moduleName = _stream->expect(Identifier);
     if (!moduleName) return nullptr;
 
-    Module *module = _mem.allocObject<Module>(__FILE__, __LINE__, _mem, *moduleName);
+    Module *module = _mem.allocObject<Module>(QAK_SRC_LOC, _mem, *moduleName);
     return module;
 }
 

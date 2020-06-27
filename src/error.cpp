@@ -10,7 +10,7 @@ Line &Error::getLine() {
 void Error::print() {
     HeapAllocator mem;
     Line &line = getLine();
-    uint8_t *lineStr = mem.alloc<uint8_t>(line.length() + 1, __FILE__, __LINE__);
+    uint8_t *lineStr = mem.alloc<uint8_t>(line.length() + 1, QAK_SRC_LOC);
     if (line.length() > 0) memcpy(lineStr, span.source.data + line.start, line.length());
     lineStr[line.length()] = 0;
 
@@ -35,11 +35,11 @@ void Errors::add(Span span, const char *msg...) {
     va_list args;
     va_start(args, msg);
 
-    char *buffer = mem.alloc<char>(1024, __FILE__, __LINE__);
+    char *buffer = mem.alloc<char>(1024, QAK_SRC_LOC);
     int len = vsnprintf(buffer, 1024, msg, args);
     if (len > 1024) {
-        mem.free(buffer, __FILE__, __LINE__);
-        buffer = mem.alloc<char>(len + 1, __FILE__, __LINE__);
+        mem.free(buffer, QAK_SRC_LOC);
+        buffer = mem.alloc<char>(len + 1, QAK_SRC_LOC);
         vsnprintf(buffer, len + 1, msg, args);
     }
     va_end(args);

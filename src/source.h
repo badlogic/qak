@@ -55,7 +55,7 @@ namespace qak {
 
         ~Source() {
             if (data) {
-                mem.free(data, __FILE__, __LINE__);
+                mem.free(data, QAK_SRC_LOC);
                 data = nullptr;
             }
         }
@@ -81,7 +81,7 @@ namespace qak {
         const char *toCString(HeapAllocator &mem) {
             uint8_t *sourceData = source.data;
             uint32_t size = end - start + 1;
-            uint8_t *cString = mem.alloc<uint8_t>(size, __FILE__, __LINE__);
+            uint8_t *cString = mem.alloc<uint8_t>(size, QAK_SRC_LOC);
             memcpy(cString, sourceData + start, size - 1);
             cString[size - 1] = 0;
             return (const char *) cString;

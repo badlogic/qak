@@ -59,8 +59,8 @@ void testExpression() {
         Module *module = parser.parse(*source, errors);
         if (errors.hasErrors()) errors.print();
         QAK_CHECK(module, "Expected module, got nullptr.");
-        mem.freeObject(module, __FILE__, __LINE__);
-        mem.freeObject(source, __FILE__, __LINE__);
+        mem.freeObject(module, QAK_SRC_LOC);
+        mem.freeObject(source, QAK_SRC_LOC);
     }
 
     if (mem.numAllocations() != 0) mem.printAllocations();

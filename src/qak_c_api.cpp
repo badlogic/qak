@@ -25,21 +25,21 @@ struct Module {
     };
 
     ~Module() {
-        mem.freeObject(source, __FILE__, __LINE__);
+        mem.freeObject(source, QAK_SRC_LOC);
 
         // BOZO astModule could be allocated through a BumpAllocator
         // by Parser. It contains Array instances which need
         // to be destructed via the default destructor.
         // HeapAllocator lowers throughput if there's many modules.
         // astModule->~Module();
-        mem.freeObject(astModule, __FILE__, __LINE__);
+        mem.freeObject(astModule, QAK_SRC_LOC);
     }
 };
 
 qak_compiler qak_compiler_new() {
     HeapAllocator *mem = new HeapAllocator();
     BumpAllocator *bumpMem = new BumpAllocator();
-    Compiler *compiler = mem->allocObject<Compiler>(__FILE__, __LINE__, bumpMem, mem);
+    Compiler *compiler = mem->allocObject<Compiler>(QAK_SRC_LOC, bumpMem, mem);
     return compiler;
 }
 
@@ -47,7 +47,7 @@ void qak_compiler_delete(qak_compiler compilerHandle) {
     Compiler *compiler = (Compiler *) compilerHandle;
     BumpAllocator *bumpMem = compiler->bumpMem;
     HeapAllocator *mem = compiler->mem;
-    mem->freeObject(compiler, __FILE__, __LINE__);
+    mem->freeObject(compiler, QAK_SRC_LOC);
     mem->printAllocations();
     delete mem;
     delete bumpMem;
@@ -66,12 +66,12 @@ qak_module qak_compile_file(qak_compiler compilerHandle, const char *fileName) {
     ast::Module *astModule = parser.parse(*source, compiler->errors);
     if (astModule == nullptr) return nullptr;
 
-    Module *module = compiler->mem->allocObject<Module>(__FILE__, __LINE__, *compiler->mem, source, tokens, astModule);
+    Module *module = compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, source, tokens, astModule);
     return module;
 }
 
 void qak_module_delete(qak_module moduleHandle) {
     Module *module = (Module *) moduleHandle;
     HeapAllocator &mem = module->mem;
-    mem.freeObject(module, __FILE__, __LINE__);
+    mem.freeObject(module, QAK_SRC_LOC);
 }

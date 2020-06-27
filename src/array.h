@@ -14,13 +14,13 @@ namespace qak {
         T *_buffer;
 
         QAK_FORCE_INLINE T *allocate(size_t n) {
-            T *ptr = _mem.calloc<T>(n, __FILE__, __LINE__);
+            T *ptr = _mem.calloc<T>(n, QAK_SRC_LOC);
             return ptr;
         }
 
         QAK_FORCE_INLINE void deallocate(T *buffer) {
             if (buffer) {
-                _mem.free(buffer, __FILE__, __LINE__);
+                _mem.free(buffer, QAK_SRC_LOC);
             }
         }
 
@@ -53,7 +53,7 @@ namespace qak {
 
         QAK_FORCE_INLINE void freeObjects() {
             for (int32_t i = (int32_t) size() - 1; i >= 0; i--) {
-                _mem.freeObject(_buffer[i], __FILE__, __LINE__);
+                _mem.freeObject(_buffer[i], QAK_SRC_LOC);
             }
             _size = 0;
         }
@@ -72,7 +72,7 @@ namespace qak {
             if (_capacity < newSize) {
                 _capacity = (size_t) (_size * 1.75f);
                 if (_capacity < 8) _capacity = 8;
-                _buffer = _mem.realloc<T>(_buffer, _capacity, __FILE__, __LINE__);
+                _buffer = _mem.realloc<T>(_buffer, _capacity, QAK_SRC_LOC);
             }
             if (oldSize < _size) {
                 for (size_t i = oldSize; i < _size; i++) {
@@ -84,7 +84,7 @@ namespace qak {
         QAK_FORCE_INLINE void ensureCapacity(size_t newCapacity = 0) {
             if (_capacity >= newCapacity) return;
             _capacity = newCapacity;
-            _buffer = _mem.realloc<T>(_buffer, newCapacity, __FILE__, __LINE__);
+            _buffer = _mem.realloc<T>(_buffer, newCapacity, QAK_SRC_LOC);
         }
 
         QAK_FORCE_INLINE void add(const T &inValue) {
@@ -96,7 +96,7 @@ namespace qak {
                 T valueCopy = inValue;
                 _capacity = (size_t) (_size * 1.75f);
                 if (_capacity < 8) _capacity = 8;
-                _buffer = _mem.realloc<T>(_buffer, _capacity, __FILE__, __LINE__);
+                _buffer = _mem.realloc<T>(_buffer, _capacity, QAK_SRC_LOC);
                 construct(_buffer + _size++, valueCopy);
             } else {
                 construct(_buffer + _size++, inValue);

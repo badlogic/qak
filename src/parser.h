@@ -303,7 +303,7 @@ namespace qak {
 
         Array<ast::Statement *> *obtainStatementArray() {
             if (_statementArrayPool.size() == 0) {
-                return _mem.allocObject<Array<ast::Statement *>>(__FILE__, __LINE__, _mem);
+                return _mem.allocObject<Array<ast::Statement *>>(QAK_SRC_LOC, _mem);
             } else {
                 Array<ast::Statement *> *array = _statementArrayPool[_statementArrayPool.size() - 1];
                 _statementArrayPool.removeAt(_statementArrayPool.size() - 1);
@@ -318,7 +318,7 @@ namespace qak {
 
         Array<ast::Parameter *> *obtainParametersArray() {
             if (_parameterArrayPool.size() == 0) {
-                return _mem.allocObject<Array<ast::Parameter * >>(__FILE__, __LINE__, _mem);
+                return _mem.allocObject<Array<ast::Parameter * >>(QAK_SRC_LOC, _mem);
             } else {
                 Array<ast::Parameter *> *array = _parameterArrayPool[_parameterArrayPool.size() - 1];
                 _parameterArrayPool.removeAt(_parameterArrayPool.size() - 1);
