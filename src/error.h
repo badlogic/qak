@@ -7,6 +7,8 @@
 
 namespace qak {
 
+#define QAK_ERROR(span, ...) { errors.add(span, __VA_ARGS__); return; }
+
     struct Error {
         Span span;
         const char *message;
@@ -18,11 +20,11 @@ namespace qak {
                 return {span.source, 0, 0, 1};
             }
 
-            s4 lineStart = span.start;
-            const u1 *sourceData = span.source.buffer.data;
+            int32_t lineStart = span.start;
+            const uint8_t *sourceData = span.source.data;
             while (true) {
                 if (lineStart < 0) break;
-                u1 c = sourceData[lineStart];
+                uint8_t c = sourceData[lineStart];
                 if (c == '\n') {
                     lineStart = lineStart + 1;
                     break;
@@ -31,18 +33,18 @@ namespace qak {
             }
             if (lineStart < 0) lineStart = 0;
 
-            s4 lineEnd = span.end;
+            int32_t lineEnd = span.end;
             while (true) {
-                if (lineEnd > (s4) span.source.buffer.size - 1) break;
-                u1 c = sourceData[lineEnd];
+                if (lineEnd > (int32_t) span.source.size - 1) break;
+                uint8_t c = sourceData[lineEnd];
                 if (c == '\n') {
                     break;
                 }
                 lineEnd++;
             }
 
-            u4 lineNumber = 0;
-            u4 idx = lineStart;
+            uint32_t lineNumber = 0;
+            uint32_t idx = lineStart;
             while (idx > 0) {
                 char c = sourceData[idx];
                 if (c == '\n') {
@@ -52,24 +54,24 @@ namespace qak {
             }
             lineNumber++;
 
-            return {span.source, (u4) lineStart, (u4) lineEnd, lineNumber};
+            return {span.source, (uint32_t) lineStart, (uint32_t) lineEnd, lineNumber};
         }
 
         void print() {
             HeapAllocator mem;
             Line line = getLine();
-            u1 *lineStr = lineStr = mem.alloc<u1>(line.getLength() + 1, __FILE__, __LINE__);
-            if (line.getLength() > 0) memcpy(lineStr, line.source.buffer.data + line.start, line.getLength());
+            uint8_t *lineStr = lineStr = mem.alloc<uint8_t>(line.getLength() + 1, __FILE__, __LINE__);
+            if (line.getLength() > 0) memcpy(lineStr, line.source.data + line.start, line.getLength());
             lineStr[line.getLength()] = 0;
 
             printf("Error (%s:%i): %s\n", span.source.fileName, line.line, message);
 
             if (line.getLength() > 0) {
                 printf("%s\n", lineStr);
-                s4 errorStart = span.start - line.start;
-                s4 errorEnd = errorStart + span.getLength() - 1;
-                for (s4 i = 0, n = line.getLength(); i < n; i++) {
-                    bool useTab = (line.source.buffer.data + line.start)[i] == '\t';
+                int32_t errorStart = span.start - line.start;
+                int32_t errorEnd = errorStart + span.getLength() - 1;
+                for (int32_t i = 0, n = line.getLength(); i < n; i++) {
+                    bool useTab = (line.source.data + line.start)[i] == '\t';
                     printf("%s", i >= errorStart && i <= errorEnd ? "^" : (useTab ? "\t" : " "));
                 }
             }
@@ -78,7 +80,7 @@ namespace qak {
 
     struct Errors {
         HeapAllocator &mem;
-        Array<Error> errors;
+        Array <Error> errors;
 
         Errors(HeapAllocator &mem) : mem(mem), errors(mem) {}
 
@@ -101,7 +103,7 @@ namespace qak {
             add({span, buffer});
         }
 
-        Array<Error> &getErrors() {
+        Array <Error> &getErrors() {
             return errors;
         }
 
@@ -110,7 +112,7 @@ namespace qak {
         }
 
         void print() {
-            for (u4 i = 0; i < errors.size(); i++) {
+            for (uint32_t i = 0; i < errors.size(); i++) {
                 errors[i].print();
             }
             printf("\n");
@@ -118,8 +120,5 @@ namespace qak {
         }
     };
 }
-
-#define ERROR(span, ...) { errors.add(span, __VA_ARGS__); return; }
-#define ERROR_RET(span, value, ...) { errors.add(span, __VA_ARGS__); return value; }
 
 #endif //QAK_ERROR_H

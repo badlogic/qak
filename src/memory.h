@@ -8,19 +8,20 @@
 #define QAK_BLOCK_SIZE (512 * 16)
 
 namespace qak {
+
     struct Allocation {
         void *address;
-        u8 size;
+        size_t size;
         const char *fileName;
-        int line;
+        int32_t line;
 
         Allocation() : address(nullptr), size(0), fileName(nullptr), line(0) {}
 
-        Allocation(void *address, u8 size, const char *file, int line) : address(address), size(size), fileName(file), line(line) {
+        Allocation(void *address, size_t size, const char *file, int32_t line) : address(address), size(size), fileName(file), line(line) {
         }
     };
 
-    struct HeapAllocator {
+    class HeapAllocator {
     private:
         std::map<void *, Allocation> _allocations;
 
@@ -36,8 +37,8 @@ namespace qak {
         }
 
         template<typename T>
-        T *alloc(u8 num, const char *file, u4 line) {
-            u8 size = sizeof(T) * num;
+        T *alloc(size_t num, const char *file, int32_t line) {
+            size_t size = sizeof(T) * num;
             if (size == 0) return nullptr;
 
             T *ptr = (T *) ::malloc(size);
@@ -46,14 +47,14 @@ namespace qak {
         }
 
         template<typename T, typename ... ARGS>
-        T *allocObject(const char *file, u4 line, ARGS &&...args) {
+        T *allocObject(const char *file, int32_t line, ARGS &&...args) {
             T *obj = new(alloc<T>(1, file, line)) T(std::forward<ARGS>(args)...);
             return obj;
         }
 
         template<typename T>
-        T *calloc(u8 num, const char *file, u4 line) {
-            u8 size = sizeof(T) * num;
+        T *calloc(size_t num, const char *file, int32_t line) {
+            size_t size = sizeof(T) * num;
             if (size == 0) return nullptr;
 
             T *ptr = (T *) ::malloc(size);
@@ -63,8 +64,8 @@ namespace qak {
         }
 
         template<typename T>
-        T *realloc(T *ptr, u8 num, const char *file, u4 line) {
-            u8 size = sizeof(T) * num;
+        T *realloc(T *ptr, size_t num, const char *file, int32_t line) {
+            size_t size = sizeof(T) * num;
             if (size == 0) return nullptr;
 
             T *result = nullptr;
@@ -79,12 +80,12 @@ namespace qak {
         }
 
         template<typename E>
-        void freeObject(E *ptr, const char *file, u4 line) {
+        void freeObject(E *ptr, const char *file, int32_t line) {
             ptr->~E();
             free(ptr, file, line);
         }
 
-        void free(void *ptr, const char *file, u4 line) {
+        void free(void *ptr, const char *file, int32_t line) {
             if (_allocations.count(ptr)) {
                 ::free((void *) ptr);
                 _allocations.erase(ptr);
@@ -95,9 +96,9 @@ namespace qak {
 
         void printAllocations() {
             if (_allocations.size() > 0) {
-                u8 totalSize = 0;
+                uint64_t totalSize = 0;
                 for (std::map<void *, Allocation>::iterator it = _allocations.begin(); it != _allocations.end(); it++) {
-                    printf("%s:%i (%llu bytes at %p)\n", it->second.fileName, it->second.line, it->second.size, it->second.address);
+                    printf("%s:%i (%zu bytes at %p)\n", it->second.fileName, it->second.line, it->second.size, it->second.address);
                     totalSize += it->second.size;
                 }
                 printf("Total memory: %llu, #allocations: %lu\n", totalSize, _allocations.size());
@@ -106,20 +107,20 @@ namespace qak {
             }
         }
 
-        u8 numAllocations() {
+        size_t numAllocations() {
             return _allocations.size();
         }
     };
 
     struct Block {
-        u1 *base;
-        u1 *end;
-        u1 *nextFree;
-        u8 size;
+        uint8_t *base;
+        uint8_t *end;
+        uint8_t *nextFree;
+        size_t size;
         Block *next;
 
-        Block(u8 size) : size(size), next(nullptr) {
-            base = (u1 *) ::malloc(size);
+        Block(size_t size) : size(size), next(nullptr) {
+            base = (uint8_t *) ::malloc(size);
             end = base + size;
             nextFree = base;
         }
@@ -128,12 +129,12 @@ namespace qak {
             ::free(base);
         }
 
-        bool canStore(u8 size) {
+        QAK_FORCE_INLINE bool canStore(size_t size) {
             return nextFree + size < end;
         }
 
-        u1 *alloc(u8 size) {
-            u1 *ptr = nextFree;
+        QAK_FORCE_INLINE uint8_t *alloc(size_t size) {
+            uint8_t *ptr = nextFree;
             nextFree += size;
             return ptr;
         }
@@ -141,12 +142,12 @@ namespace qak {
 
     struct BumpAllocator {
         Block *head;
-        u8 blockSize;
+        size_t blockSize;
 
         BumpAllocator() : head(nullptr), blockSize(QAK_BLOCK_SIZE) {
         }
 
-        BumpAllocator(u8 blockSize) : head(nullptr), blockSize(blockSize) {
+        BumpAllocator(size_t blockSize) : head(nullptr), blockSize(blockSize) {
         };
 
         BumpAllocator(BumpAllocator const &) = delete;
@@ -162,8 +163,8 @@ namespace qak {
         }
 
         template<typename T>
-        T *alloc(u8 num) {
-            u8 size = sizeof(T) * num;
+        T *alloc(size_t num) {
+            size_t size = sizeof(T) * num;
             if (size == 0) return nullptr;
 
             if (head == nullptr || !head->canStore(size)) {
@@ -180,20 +181,6 @@ namespace qak {
                 Block *block = head;
                 head = block->next;
                 delete block;
-            }
-        }
-    };
-
-    struct Buffer {
-        HeapAllocator &mem;
-        u1 *data;
-        u8 size;
-
-        void free() {
-            if (data != nullptr) {
-                mem.free(data, __FILE__, __LINE__);
-                data = nullptr;
-                size = 0;
             }
         }
     };

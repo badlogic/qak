@@ -1,13 +1,13 @@
 #ifndef QAK_IO_H
 #define QAK_IO_H
 
-#include "memory.h"
+#include "source.h"
 
 namespace qak {
     namespace io {
-        Buffer readFile(const char *fileName, HeapAllocator &mem);
+        Source *readFile(const char *fileName, HeapAllocator &mem);
 
-        u8 timeMillis();
+        uint64_t timeMillis();
     };
 }
 

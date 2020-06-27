@@ -25,14 +25,13 @@ struct Module {
     };
 
     ~Module() {
-        source->buffer.free();
         mem.freeObject(source, __FILE__, __LINE__);
+
         // BOZO astModule could be allocated through a BumpAllocator
         // by Parser. It contains Array instances which need
         // to be destructed via the default destructor.
         // HeapAllocator lowers throughput if there's many modules.
         // astModule->~Module();
-
         mem.freeObject(astModule, __FILE__, __LINE__);
     }
 };
@@ -56,10 +55,8 @@ void qak_compiler_delete(qak_compiler compilerHandle) {
 
 qak_module qak_compile_file(qak_compiler compilerHandle, const char *fileName) {
     Compiler *compiler = (Compiler *) compilerHandle;
-    Buffer buffer = io::readFile(fileName, *compiler->mem);
-    if (buffer.data == nullptr) return nullptr;
-    // BOZO this needs to be allocated through mem
-    Source *source = compiler->mem->allocObject<Source>(__FILE__, __LINE__, buffer, fileName);
+    Source *source = io::readFile(fileName, *compiler->mem);
+    if (source == nullptr) return nullptr;
 
     Array<Token> tokens(*compiler->mem);
     qak::tokenizer::tokenize(*source, tokens, compiler->errors);

@@ -5,17 +5,18 @@
 #include "array.h"
 
 namespace qak {
+
     template<typename K>
     struct HashFunction {
-        u8 operator()(const K &key) const {
-            return (u8) key;
+        int64_t operator()(const K &key) const {
+            return (int64_t) key;
         }
     };
 
     template<typename K>
     struct EqualsFunction {
         bool operator()(const K &a, const K &b) const {
-            return (u8) a == (u8) b;
+            return (int64_t) a == (int64_t) b;
         }
     };
 
@@ -30,26 +31,27 @@ namespace qak {
 
     template<typename K, typename V, typename H = HashFunction<K>, typename E = EqualsFunction<K>>
     class Map {
-        HeapAllocator &mem;
-        Array<MapEntry<K, V> *> entries;
-        u8 size;
-        H hashFunc;
-        E equalsFunc;
+    private:
+        HeapAllocator &_mem;
+        Array<MapEntry<K, V> *> _entries;
+        size_t _size;
+        H _hashFunc;
+        E _equalsFunc;
 
     public:
         struct MapEntries {
-            Array<MapEntry<K, V> *> &entries;
-            u8 index;
-            MapEntry<K, V> *nextEntry;
+            Array<MapEntry<K, V> *> &_entries;
+            size_t _index;
+            MapEntry<K, V> *_nextEntry;
 
-            MapEntries(Array<MapEntry<K, V> *> &entries) : entries(entries), index(0), nextEntry(entries[0]) {}
+            MapEntries(Array<MapEntry<K, V> *> &entries) : _entries(entries), _index(0), _nextEntry(entries[0]) {}
 
             bool hasNext() {
                 while (true) {
-                    if (index >= entries.size()) return false;
-                    if (nextEntry == nullptr) {
-                        index++;
-                        if (index < entries.size()) nextEntry = entries[index];
+                    if (_index >= _entries.size()) return false;
+                    if (_nextEntry == nullptr) {
+                        _index++;
+                        if (_index < _entries.size()) _nextEntry = _entries[_index];
                         continue;
                     }
                     return true;
@@ -57,46 +59,46 @@ namespace qak {
             }
 
             MapEntry<K, V> *next() {
-                MapEntry<K, V> *entry = nextEntry;
-                if (entry != nullptr) nextEntry = entry->next;
+                MapEntry<K, V> *entry = _nextEntry;
+                if (entry != nullptr) _nextEntry = entry->next;
                 return entry;
             }
         };
 
-        Map(HeapAllocator &mem) : mem(mem), entries(mem), size(0) {
-            entries.setSize(16, nullptr);
+        explicit Map(HeapAllocator &mem) : _mem(mem), _entries(mem), _size(0) {
+            _entries.setSize(16, nullptr);
         }
 
-        Map(HeapAllocator &mem, u4 tableSize) : mem(mem), entries(mem), size(0) {
-            entries.setSize(tableSize, nullptr);
+        Map(HeapAllocator &mem, size_t tableSize) : _mem(mem), _entries(mem), _size(0) {
+            _entries.setSize(tableSize, nullptr);
         }
 
         ~Map() {
-            for (u8 i = 0; i < entries.size(); i++) {
-                MapEntry<K, V> *entry = entries[i];
+            for (size_t i = 0; i < _entries.size(); i++) {
+                MapEntry<K, V> *entry = _entries[i];
                 while (entry != nullptr) {
                     MapEntry<K, V> *next = entry->next;
-                    mem.free(entry, __FILE__, __LINE__);
+                    _mem.free(entry, __FILE__, __LINE__);
                     entry = next;
                 }
             }
         }
 
         void put(const K &key, const V &value) {
-            u8 hash = hashFunc(key) % entries.size();
-            MapEntry<K, V> *entry = entries[hash];
-            size++;
+            int64_t hash = _hashFunc(key) % _entries.size();
+            MapEntry<K, V> *entry = _entries[hash];
+            _size++;
 
             // No entries for that hash, add a new entry
             if (entry == nullptr) {
-                entry = new(mem.alloc<MapEntry<K, V>>(1, __FILE__, __LINE__)) MapEntry<K, V>(key, value);
-                entries[hash] = entry;
+                entry = new(_mem.alloc<MapEntry<K, V>>(1, __FILE__, __LINE__)) MapEntry<K, V>(key, value);
+                _entries[hash] = entry;
                 return;
             }
 
             while (entry != nullptr) {
                 // Found key, replace key and value in entry.
-                if (equalsFunc(key, entry->key)) {
+                if (_equalsFunc(key, entry->key)) {
                     entry->key = key;
                     entry->value = value;
                     return;
@@ -105,35 +107,35 @@ namespace qak {
             }
 
             // Didn't find key, add a new entry
-            entry = new(mem.alloc<MapEntry<K, V>>(1, __FILE__, __LINE__)) MapEntry<K, V>(key, value);
-            entry->next = entries[hash];
-            entries[hash] = entry;
+            entry = new(_mem.alloc<MapEntry<K, V>>(1, __FILE__, __LINE__)) MapEntry<K, V>(key, value);
+            entry->next = _entries[hash];
+            _entries[hash] = entry;
         }
 
         MapEntry<K, V> *get(const K &key) {
-            u8 hash = hashFunc(key) % entries.size();
-            MapEntry<K, V> *entry = entries[hash];
+            int64_t hash = _hashFunc(key) % _entries.size();
+            MapEntry<K, V> *entry = _entries[hash];
             while (entry != nullptr) {
-                if (equalsFunc(key, entry->key)) break;
+                if (_equalsFunc(key, entry->key)) break;
                 entry = entry->next;
             }
             return entry;
         }
 
         void remove(const K &key) {
-            u8 hash = hashFunc(key) % entries.size();
+            int64_t hash = _hashFunc(key) % _entries.size();
             MapEntry<K, V> *prevEntry = nullptr;
-            MapEntry<K, V> *entry = entries[hash];
+            MapEntry<K, V> *entry = _entries[hash];
             while (entry != nullptr) {
-                if (equalsFunc(key, entry->key)) {
+                if (_equalsFunc(key, entry->key)) {
                     if (prevEntry == nullptr) {
-                        entries[hash] = entry->next;
+                        _entries[hash] = entry->next;
                     } else {
                         prevEntry->next = entry->next;
                     }
                     entry->~MapEntry<K, V>();
-                    mem.free(entry, __FILE__, __LINE__);
-                    size--;
+                    _mem.free(entry, __FILE__, __LINE__);
+                    _size--;
                     break;
                 }
                 prevEntry = entry;
@@ -141,12 +143,12 @@ namespace qak {
             }
         }
 
-        MapEntries getEntries() {
-            return MapEntries(entries);
+        MapEntries entries() {
+            return MapEntries(_entries);
         }
 
-        u8 getSize() {
-            return size;
+        size_t size() {
+            return _size;
         }
     };
 }

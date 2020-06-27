@@ -9,47 +9,47 @@
 namespace qak {
     struct CharacterStream {
         Source &source;
-        u4 index;
-        u4 end;
-        u4 spanStart;
+        uint32_t index;
+        uint32_t end;
+        uint32_t spanStart;
 
         // Taken from https://www.cprogramming.com/tutorial/utf8.c
-        static QAK_FORCE_INLINE u4 nextUtf8Character(const u1 *s, u4 *i) {
-            static const u4 utf8Offsets[6] = {
+        static QAK_FORCE_INLINE uint32_t nextUtf8Character(const uint8_t *s, uint32_t *i) {
+            static const uint32_t utf8Offsets[6] = {
                     0x00000000UL, 0x00003080UL, 0x000E2080UL,
                     0x03C82080UL, 0xFA082080UL, 0x82082080UL
             };
 
-            u4 ch = 0;
+            uint32_t ch = 0;
             int sz = 0;
 
             do {
                 ch <<= 6;
                 ch += s[(*i)++];
                 sz++;
-            } while (s[*i] && !(((s[*i])&0xC0)!=0x80));
+            } while (s[*i] && !(((s[*i]) & 0xC0) != 0x80));
             ch -= utf8Offsets[sz - 1];
 
             return ch;
         }
 
-        CharacterStream(Source &source) : source(source), index(0), end(source.buffer.size), spanStart(0) {
+        CharacterStream(Source &source) : source(source), index(0), end(source.size), spanStart(0) {
         }
 
         QAK_FORCE_INLINE bool hasMore() {
             return index < end;
         }
 
-        QAK_FORCE_INLINE u4 consume() {
-            return nextUtf8Character(source.buffer.data, &index);
+        QAK_FORCE_INLINE uint32_t consume() {
+            return nextUtf8Character(source.data, &index);
         }
 
         QAK_FORCE_INLINE bool match(const char *needleData, bool consume) {
-            u4 needleLength = 0;
-            const u1 *sourceData = source.buffer.data;
-            for (u4 i = 0, j = index; needleData[i] != 0; i++, needleLength++) {
+            uint32_t needleLength = 0;
+            const uint8_t *sourceData = source.data;
+            for (uint32_t i = 0, j = index; needleData[i] != 0; i++, needleLength++) {
                 if (index >= end) return false;
-                u4 c = nextUtf8Character(sourceData, &j);
+                uint32_t c = nextUtf8Character(sourceData, &j);
                 if ((unsigned char) needleData[i] != c) return false;
             }
             if (consume) index += needleLength;
@@ -58,7 +58,7 @@ namespace qak {
 
         QAK_FORCE_INLINE bool matchDigit(bool consume) {
             if (!hasMore()) return false;
-            u1 c = source.buffer.data[index];
+            uint8_t c = source.data[index];
             if (c >= '0' && c <= '9') {
                 if (consume) index++;
                 return true;
@@ -68,7 +68,7 @@ namespace qak {
 
         QAK_FORCE_INLINE bool matchHex(bool consume) {
             if (!hasMore()) return false;
-            u1 c = source.buffer.data[index];
+            uint8_t c = source.data[index];
             if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
                 if (consume) index++;
                 return true;
@@ -78,8 +78,8 @@ namespace qak {
 
         QAK_FORCE_INLINE bool matchIdentifierStart(bool consume) {
             if (!hasMore()) return false;
-            u4 idx = index;
-            u4 c = nextUtf8Character(source.buffer.data, &idx);
+            uint32_t idx = index;
+            uint32_t c = nextUtf8Character(source.data, &idx);
             if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || c >= 0xc0) {
                 if (consume) index = idx;
                 return true;
@@ -89,8 +89,8 @@ namespace qak {
 
         QAK_FORCE_INLINE bool matchIdentifierPart(bool consume) {
             if (!hasMore()) return false;
-            u4 idx = index;
-            u4 c = nextUtf8Character(source.buffer.data, &idx);
+            uint32_t idx = index;
+            uint32_t c = nextUtf8Character(source.data, &idx);
             if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (c >= '0' && c <= '9') || c >= 0x80) {
                 if (consume) index = idx;
                 return true;
@@ -99,10 +99,10 @@ namespace qak {
         }
 
         QAK_FORCE_INLINE void skipWhiteSpace() {
-            const u1 *sourceData = source.buffer.data;
+            const uint8_t *sourceData = source.data;
             while (true) {
                 if (index >= end) return;
-                u1 c = sourceData[index];
+                uint8_t c = sourceData[index];
                 if (c == '#') {
                     while (index < end && c != '\n') {
                         c = sourceData[index];
@@ -185,10 +185,10 @@ namespace qak {
         TokenType type;
         Span span;
 
-        QAK_FORCE_INLINE bool match(const char *needle, u4 len) {
+        QAK_FORCE_INLINE bool match(const char *needle, uint32_t len) {
             if (span.getLength() != len) return false;
-            const u1 *sourceData = span.source.buffer.data + span.start;
-            for (u4 i = 0; i < len; i++) {
+            const uint8_t *sourceData = span.source.data + span.start;
+            for (uint32_t i = 0; i < len; i++) {
                 if (sourceData[i] != needle[i]) return false;
             }
             return true;
@@ -235,7 +235,7 @@ namespace qak {
         QAK_FORCE_INLINE Token *expect(TokenType type) {
             bool result = match(type, true);
             if (!result) {
-                Token *token = (u8) index < tokens.size() ? &tokens[index] : nullptr;
+                Token *token = (uint64_t) index < tokens.size() ? &tokens[index] : nullptr;
                 Span *span = token != nullptr ? &token->span : nullptr;
                 if (span == nullptr)
                     errors.add({source, 0, 0}, "Expected '%s', but reached the end of the source.", tokenizer::tokenTypeToString(type));
@@ -251,10 +251,10 @@ namespace qak {
 
         /** Checks if the next token matches the given text and optionally consumes, or throws an error if the next token did not match
          * the text. */
-        QAK_FORCE_INLINE Token *expect(const char *text, u4 len) {
+        QAK_FORCE_INLINE Token *expect(const char *text, uint32_t len) {
             bool result = match(text, len, true);
             if (!result) {
-                Token *token = (u8) index < tokens.size() ? &tokens[index] : nullptr;
+                Token *token = (uint64_t) index < tokens.size() ? &tokens[index] : nullptr;
                 Span *span = token != nullptr ? &token->span : nullptr;
                 if (span == nullptr) {
                     errors.add({source, 0, 0}, "Expected '%s', but reached the end of the source.", text);
@@ -279,7 +279,7 @@ namespace qak {
         }
 
         /** Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
-        QAK_FORCE_INLINE bool match(const char *text, u4 len, bool consume) {
+        QAK_FORCE_INLINE bool match(const char *text, uint32_t len, bool consume) {
             if (index >= end) return false;
             if (tokens[index].match(text, len)) {
                 if (consume) index++;

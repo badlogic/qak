@@ -70,7 +70,7 @@ Function *Parser::parseFunction() {
 
     if (!_stream->expect(QAK_STRING_WITH_LEN("end"))) return nullptr;
 
-    Function *function = _bumpMem.allocObject<Function>(_bumpMem, _mem, name->span, *parameters, returnType, *statements);
+    Function *function = _bumpMem.allocObject<Function>(_bumpMem, name->span, *parameters, returnType, *statements);
     freeStatementArray(statements);
     freeParameterArray(parameters);
     return function;
@@ -97,7 +97,7 @@ ast::Parameter *Parser::parseParameter() {
     TypeSpecifier *type = parseTypeSpecifier();
     if (!type) return nullptr;
 
-    Parameter *parameter = _bumpMem.allocObject<Parameter>(_mem, name->span, type);
+    Parameter *parameter = _bumpMem.allocObject<Parameter>(name->span, type);
     return parameter;
 }
 
@@ -131,7 +131,7 @@ Variable *Parser::parseVariable() {
         if (!expression) return nullptr;
     }
 
-    Variable *variable = _bumpMem.allocObject<Variable>(_mem, name->span, type, expression);
+    Variable *variable = _bumpMem.allocObject<Variable>(name->span, type, expression);
     return variable;
 }
 
@@ -139,7 +139,7 @@ TypeSpecifier *Parser::parseTypeSpecifier() {
     Token *name = _stream->expect(Identifier);
     if (!name) return nullptr;
 
-    TypeSpecifier *type = _bumpMem.allocObject<TypeSpecifier>(_mem, name->span);
+    TypeSpecifier *type = _bumpMem.allocObject<TypeSpecifier>(name->span);
     return type;
 }
 
@@ -157,7 +157,7 @@ Expression *Parser::parseTernaryOperator() {
         if (!_stream->match(QAK_STRING_WITH_LEN(":"), true)) return nullptr;
         Expression *falseValue = parseTernaryOperator();
         if (!falseValue) return nullptr;
-        TernaryOperation *ternary = _bumpMem.allocObject<TernaryOperation>(_mem, condition, trueValue, falseValue);
+        TernaryOperation *ternary = _bumpMem.allocObject<TernaryOperation>(condition, trueValue, falseValue);
         return ternary;
     } else {
         return condition;
@@ -176,7 +176,7 @@ static TokenType binaryOperators[OPERATOR_NUM_GROUPS][5] = {
         {ForwardSlash, Asterisk,  Percentage, OPERATOR_END}
 };
 
-Expression *Parser::parseBinaryOperator(u4 level) {
+Expression *Parser::parseBinaryOperator(uint32_t level) {
     int nextLevel = level + 1;
 
     Expression *left = nextLevel == OPERATOR_NUM_GROUPS ? parseUnaryOperator() : parseBinaryOperator(nextLevel);
@@ -194,7 +194,7 @@ Expression *Parser::parseBinaryOperator(u4 level) {
         Expression *right = nextLevel == OPERATOR_NUM_GROUPS ? parseUnaryOperator() : parseBinaryOperator(nextLevel);
         if (right == nullptr) return nullptr;
 
-        left = _bumpMem.allocObject<BinaryOperation>(_mem, opToken->span, left, right);
+        left = _bumpMem.allocObject<BinaryOperation>(opToken->span, left, right);
     }
     return left;
 }
@@ -211,7 +211,7 @@ Expression *Parser::parseUnaryOperator() {
         Token *op = _stream->consume();
         Expression *expression = parseUnaryOperator();
         if (!expression) return nullptr;
-        UnaryOperation *operation = _bumpMem.allocObject<UnaryOperation>(_mem, op->span, expression);
+        UnaryOperation *operation = _bumpMem.allocObject<UnaryOperation>(op->span, expression);
         return operation;
     } else {
         if (_stream->match(QAK_STRING_WITH_LEN("("), true)) {
@@ -238,7 +238,7 @@ Expression *Parser::parseAccessOrCallOrLiteral() {
         _stream->match(CharacterLiteral, false) ||
         _stream->match(NullLiteral, false)) {
         Token *token = _stream->consume();
-        Literal *literal = _bumpMem.allocObject<Literal>(_mem, token->type, token->span);
+        Literal *literal = _bumpMem.allocObject<Literal>(token->type, token->span);
         return literal;
     } else if (_stream->match(Identifier, false)) {
         return parseAccessOrCall();

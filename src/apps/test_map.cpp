@@ -5,8 +5,8 @@
 using namespace qak;
 
 struct IntHashFunction {
-    u8 operator()(const int &key) const {
-        return (u8) key;
+    uint64_t operator()(const int &key) const {
+        return (uint64_t) key;
     }
 };
 
@@ -25,14 +25,14 @@ int main() {
         IntIntMap intMap(mem);
 
         intMap.put(1, 2);
-        QAK_CHECK(intMap.getSize() == 1, "Expected size of 1, got %llu.", intMap.getSize());
+        QAK_CHECK(intMap.size() == 1, "Expected size of 1, got %zu.", intMap.size());
 
         MapEntry<int, int> *entry = intMap.get(1);
         QAK_CHECK(entry != nullptr, "Expected map entry for key 1.");
         QAK_CHECK(entry->key == 1, "Expected key 1, got %i", entry->key);
         QAK_CHECK(entry->value == 2, "Expected value 2, got %i", entry->value);
 
-        IntIntMap::MapEntries entries = intMap.getEntries();
+        IntIntMap::MapEntries entries = intMap.entries();
         QAK_CHECK(entries.hasNext(), "Expected an entry");
         entry = entries.next();
         QAK_CHECK(entry->key == 1, "Expected key 1, got %i", entry->key);
@@ -40,7 +40,7 @@ int main() {
         QAK_CHECK(!entries.hasNext(), "Expected no more entries");
 
         intMap.remove(1);
-        QAK_CHECK(intMap.getSize() == 0, "Expected map size 0, got %llu", intMap.getSize());
+        QAK_CHECK(intMap.size() == 0, "Expected map size 0, got %zu", intMap.size());
         QAK_CHECK(intMap.get(1) == nullptr, "Expected no entry for key 1");
     }
     mem.printAllocations();
@@ -53,9 +53,9 @@ int main() {
             sumKeys += i;
             sumValues += i * 10;
         }
-        QAK_CHECK(intMap.getSize() == 10, "Expected map size to be 10, got %llu", intMap.getSize());
+        QAK_CHECK(intMap.size() == 10, "Expected map size to be 10, got %zu", intMap.size());
 
-        IntIntMap::MapEntries entries = intMap.getEntries();
+        IntIntMap::MapEntries entries = intMap.entries();
         while (entries.hasNext()) {
             MapEntry<int, int> *entry = entries.next();
             sumKeys -= entry->key;
