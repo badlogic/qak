@@ -24,9 +24,11 @@ namespace qak {
     class HeapAllocator {
     private:
         std::map<void *, Allocation> _allocations;
+        size_t _totalAllocations;
+        size_t _totalFrees;
 
     public:
-        HeapAllocator() {};
+        HeapAllocator(): _totalAllocations(0), _totalFrees(0) {};
 
         HeapAllocator(const HeapAllocator &other) = delete;
 
@@ -40,6 +42,8 @@ namespace qak {
         T *alloc(size_t num, const char *file, int32_t line) {
             size_t size = sizeof(T) * num;
             if (size == 0) return nullptr;
+
+            _totalAllocations++;
 
             T *ptr = (T *) ::malloc(size);
             _allocations[(void *) ptr] = Allocation(ptr, size, file, line);
@@ -57,6 +61,8 @@ namespace qak {
             size_t size = sizeof(T) * num;
             if (size == 0) return nullptr;
 
+            _totalAllocations++;
+
             T *ptr = (T *) ::malloc(size);
             ::memset(ptr, 0, size);
             _allocations[(void *) ptr] = Allocation(ptr, size, file, line);
@@ -67,6 +73,8 @@ namespace qak {
         T *realloc(T *ptr, size_t num, const char *file, int32_t line) {
             size_t size = sizeof(T) * num;
             if (size == 0) return nullptr;
+
+            _totalAllocations++;
 
             T *result = nullptr;
             if (ptr == nullptr) {
@@ -89,6 +97,7 @@ namespace qak {
             if (_allocations.count(ptr)) {
                 ::free((void *) ptr);
                 _allocations.erase(ptr);
+                _totalFrees++;
             } else {
                 printf("%s:%i (address %p): Double free or not allocated through qak::memory\n", file, line, (void *) ptr);
             }
@@ -109,6 +118,14 @@ namespace qak {
 
         size_t numAllocations() {
             return _allocations.size();
+        }
+
+        size_t totalAllocations() {
+            return _totalAllocations;
+        }
+
+        size_t totalFrees() {
+            return _totalFrees;
         }
     };
 

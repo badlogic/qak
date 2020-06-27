@@ -13,11 +13,6 @@ namespace qak {
         size_t _capacity;
         T *_buffer;
 
-        QAK_FORCE_INLINE T *allocate(size_t n) {
-            T *ptr = _mem.calloc<T>(n, QAK_SRC_LOC);
-            return ptr;
-        }
-
         QAK_FORCE_INLINE void deallocate(T *buffer) {
             if (buffer) {
                 _mem.free(buffer, QAK_SRC_LOC);
@@ -161,12 +156,25 @@ namespace qak {
         T *_buffer;
 
     public:
+        FixedArray(BumpAllocator &mem): _mem(mem), _size(0), _buffer(nullptr) {}
+
         FixedArray(BumpAllocator &mem, Array<T> &array) : _mem(mem), _size(array.size()) {
             if (array.size() > 0) {
                 _buffer = _mem.alloc<T>(_size);
                 for (size_t i = 0; i < _size; i++) {
                     new(_buffer + i) T(array[i]);
                 }
+            }
+        }
+
+        QAK_FORCE_INLINE void set(Array<T> &array) {
+            if (array.size() > 0) {
+                _buffer = _mem.alloc<T>(_size);
+                for (size_t i = 0; i < _size; i++) {
+                    new(_buffer + i) T(array[i]);
+                }
+            } else {
+                _size = 0;
             }
         }
 

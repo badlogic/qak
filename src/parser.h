@@ -228,13 +228,15 @@ namespace qak {
         };
 
         struct Module : public AstNode {
+            BumpAllocator &mem;
             Span name;
-            Array<Variable *> variables;
-            Array<Function *> functions;
-            Array<Statement *> statements;
+            FixedArray<Variable *> variables;
+            FixedArray<Function *> functions;
+            FixedArray<Statement *> statements;
 
-            Module(HeapAllocator &mem, Span name) :
+            Module(BumpAllocator &mem, Span name) :
                     AstNode(AstModule, name),
+                    mem(mem),
                     name(name),
                     variables(mem),
                     functions(mem),
@@ -266,14 +268,18 @@ namespace qak {
 
     struct Parser {
     private:
-        BumpAllocator &_bumpMem;
         HeapAllocator &_mem;
+        Array<Token> _tokens;
+        Array<Array<ast::Variable *> *> _variableArrayPool;
+        Array<Array<ast::Statement *> *> _statementArrayPool;
+        Array<Array<ast::Function *> *> _functionArrayPool;
+        Array<Array<ast::Parameter *> *> _parameterArrayPool;
+
+        // Set on each call to parse.
         Source *_source;
         TokenStream *_stream;
-        Array<Token> _tokens;
         Errors *_errors;
-        Array<Array<ast::Statement *> *> _statementArrayPool;
-        Array<Array<ast::Parameter *> *> _parameterArrayPool;
+        BumpAllocator *_bumpMem;
 
         ast::Module *parseModule();
 
@@ -301,6 +307,21 @@ namespace qak {
 
         ast::Expression *parseAccessOrCall();
 
+        Array<ast::Variable *> *obtainVariableArray() {
+            if (_variableArrayPool.size() == 0) {
+                return _mem.allocObject<Array<ast::Variable *>>(QAK_SRC_LOC, _mem);
+            } else {
+                Array<ast::Variable *> *array = _variableArrayPool[_variableArrayPool.size() - 1];
+                _variableArrayPool.removeAt(_variableArrayPool.size() - 1);
+                return array;
+            }
+        }
+
+        void freeVariableArray(Array<ast::Variable *> *array) {
+            array->clear();
+            _variableArrayPool.add(array);
+        }
+
         Array<ast::Statement *> *obtainStatementArray() {
             if (_statementArrayPool.size() == 0) {
                 return _mem.allocObject<Array<ast::Statement *>>(QAK_SRC_LOC, _mem);
@@ -309,6 +330,21 @@ namespace qak {
                 _statementArrayPool.removeAt(_statementArrayPool.size() - 1);
                 return array;
             }
+        }
+
+        Array<ast::Function *> *obtainFunctionArray() {
+            if (_functionArrayPool.size() == 0) {
+                return _mem.allocObject<Array<ast::Function *>>(QAK_SRC_LOC, _mem);
+            } else {
+                Array<ast::Function *> *array = _functionArrayPool[_functionArrayPool.size() - 1];
+                _functionArrayPool.removeAt(_functionArrayPool.size() - 1);
+                return array;
+            }
+        }
+
+        void freeFunctionArray(Array<ast::Function *> *array) {
+            array->clear();
+            _functionArrayPool.add(array);
         }
 
         void freeStatementArray(Array<ast::Statement *> *array) {
@@ -332,20 +368,27 @@ namespace qak {
         }
 
     public:
-        Parser(BumpAllocator &bumpMem, HeapAllocator &mem) :
-                _bumpMem(bumpMem), _mem(mem),
-                _source(nullptr),
-                _stream(nullptr), _tokens(mem),
-                _errors(nullptr),
+        Parser(HeapAllocator &mem) :
+                _mem(mem),
+                _tokens(mem),
+                _variableArrayPool(mem),
                 _statementArrayPool(mem),
-                _parameterArrayPool(mem) {}
+                _functionArrayPool(mem),
+                _parameterArrayPool(mem),
+                _source(nullptr),
+                _stream(nullptr),
+                _errors(nullptr),
+                _bumpMem(nullptr) {}
+
 
         ~Parser() {
+            _variableArrayPool.freeObjects();
             _statementArrayPool.freeObjects();
+            _functionArrayPool.freeObjects();
             _parameterArrayPool.freeObjects();
         }
 
-        ast::Module *parse(Source &source, Errors &errors);
+        ast::Module *parse(Source &source, Errors &errors, BumpAllocator *bumpMem);
     };
 }
 

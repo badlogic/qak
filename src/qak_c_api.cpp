@@ -27,12 +27,8 @@ struct Module {
     ~Module() {
         mem.freeObject(source, QAK_SRC_LOC);
 
-        // BOZO astModule could be allocated through a BumpAllocator
-        // by Parser. It contains Array instances which need
-        // to be destructed via the default destructor.
-        // HeapAllocator lowers throughput if there's many modules.
-        // astModule->~Module();
-        mem.freeObject(astModule, QAK_SRC_LOC);
+        // BOZO also need to tie one BumpAllocator to one Module
+        // and clean it up here.
     }
 };
 
@@ -62,8 +58,8 @@ qak_module qak_compile_file(qak_compiler compilerHandle, const char *fileName) {
     qak::tokenizer::tokenize(*source, tokens, compiler->errors);
     if (compiler->errors.hasErrors()) return nullptr;
 
-    qak::Parser parser(*compiler->bumpMem, *compiler->mem);
-    ast::Module *astModule = parser.parse(*source, compiler->errors);
+    qak::Parser parser(*compiler->mem);
+    ast::Module *astModule = parser.parse(*source, compiler->errors, compiler->bumpMem);
     if (astModule == nullptr) return nullptr;
 
     Module *module = compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, source, tokens, astModule);

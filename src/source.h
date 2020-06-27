@@ -40,7 +40,7 @@ namespace qak {
             }
 
             if (_lines[_lines.size()].start != lineStart) {
-                _lines.add(Line(lineStart, size - 1, _lines.size()));
+                _lines.add(Line(lineStart, size, _lines.size()));
             }
         }
 

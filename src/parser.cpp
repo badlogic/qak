@@ -4,9 +4,10 @@ using namespace qak;
 
 using namespace qak::ast;
 
-Module *Parser::parse(Source &source, Errors &errors) {
+Module *Parser::parse(Source &source, Errors &errors, BumpAllocator *bumpMem) {
     _source = &source;
     _errors = &errors;
+    _bumpMem = bumpMem;
 
     _tokens.clear();
     tokenizer::tokenize(source, _tokens, errors);
@@ -18,20 +19,33 @@ Module *Parser::parse(Source &source, Errors &errors) {
     Module *module = parseModule();
     if (!module) return nullptr;
 
+    Array<Function *> *functions = obtainFunctionArray();
+    Array<Statement *> *statements = obtainStatementArray();
+    Array<Variable *> *variables = obtainVariableArray();
+
     while (_stream->hasMore()) {
         if (_stream->match(QAK_STR("fun"), false)) {
             Function *function = parseFunction();
             if (!function) return nullptr;
 
-            module->functions.add(function);
+            functions->add(function);
         } else {
             Statement *statement = parseStatement();
             if (!statement) return nullptr;
 
-            if (statement->astType == AstVariable) module->variables.add(static_cast<Variable *>(statement));
-            module->statements.add(statement);
+            if (statement->astType == AstVariable) variables->add(static_cast<Variable *>(statement));
+            statements->add(statement);
         }
     }
+
+    module->variables.set(*variables);
+    module->statements.set(*statements);
+    module->functions.set(*functions);
+
+    freeVariableArray(variables);
+    freeStatementArray(statements);
+    freeFunctionArray(functions);
+
     return module;
 }
 
@@ -42,7 +56,7 @@ Module *Parser::parseModule() {
     Token *moduleName = _stream->expect(Identifier);
     if (!moduleName) return nullptr;
 
-    Module *module = _mem.allocObject<Module>(QAK_SRC_LOC, _mem, *moduleName);
+    Module *module = _bumpMem->allocObject<Module>(*_bumpMem, *moduleName);
     return module;
 }
 
@@ -70,7 +84,7 @@ Function *Parser::parseFunction() {
 
     if (!_stream->expect(QAK_STR("end"))) return nullptr;
 
-    Function *function = _bumpMem.allocObject<Function>(_bumpMem, *name, *parameters, returnType, *statements);
+    Function *function = _bumpMem->allocObject<Function>(*_bumpMem, *name, *parameters, returnType, *statements);
     freeStatementArray(statements);
     freeParameterArray(parameters);
     return function;
@@ -97,7 +111,7 @@ ast::Parameter *Parser::parseParameter() {
     TypeSpecifier *type = parseTypeSpecifier();
     if (!type) return nullptr;
 
-    Parameter *parameter = _bumpMem.allocObject<Parameter>(*name, type);
+    Parameter *parameter = _bumpMem->allocObject<Parameter>(*name, type);
     return parameter;
 }
 
@@ -131,7 +145,7 @@ Variable *Parser::parseVariable() {
         if (!expression) return nullptr;
     }
 
-    Variable *variable = _bumpMem.allocObject<Variable>(*name, type, expression);
+    Variable *variable = _bumpMem->allocObject<Variable>(*name, type, expression);
     return variable;
 }
 
@@ -139,7 +153,7 @@ TypeSpecifier *Parser::parseTypeSpecifier() {
     Token *name = _stream->expect(Identifier);
     if (!name) return nullptr;
 
-    TypeSpecifier *type = _bumpMem.allocObject<TypeSpecifier>(*name);
+    TypeSpecifier *type = _bumpMem->allocObject<TypeSpecifier>(*name);
     return type;
 }
 
@@ -157,7 +171,7 @@ Expression *Parser::parseTernaryOperator() {
         if (!_stream->match(QAK_STR(":"), true)) return nullptr;
         Expression *falseValue = parseTernaryOperator();
         if (!falseValue) return nullptr;
-        TernaryOperation *ternary = _bumpMem.allocObject<TernaryOperation>(condition, trueValue, falseValue);
+        TernaryOperation *ternary = _bumpMem->allocObject<TernaryOperation>(condition, trueValue, falseValue);
         return ternary;
     } else {
         return condition;
@@ -194,7 +208,7 @@ Expression *Parser::parseBinaryOperator(uint32_t level) {
         Expression *right = nextLevel == OPERATOR_NUM_GROUPS ? parseUnaryOperator() : parseBinaryOperator(nextLevel);
         if (right == nullptr) return nullptr;
 
-        left = _bumpMem.allocObject<BinaryOperation>(*opToken, left, right);
+        left = _bumpMem->allocObject<BinaryOperation>(*opToken, left, right);
     }
     return left;
 }
@@ -211,7 +225,7 @@ Expression *Parser::parseUnaryOperator() {
         Token *op = _stream->consume();
         Expression *expression = parseUnaryOperator();
         if (!expression) return nullptr;
-        UnaryOperation *operation = _bumpMem.allocObject<UnaryOperation>(*op, expression);
+        UnaryOperation *operation = _bumpMem->allocObject<UnaryOperation>(*op, expression);
         return operation;
     } else {
         if (_stream->match(QAK_STR("("), true)) {
@@ -246,7 +260,7 @@ Expression *Parser::parseAccessOrCallOrLiteral() {
         case CharacterLiteral:
         case NullLiteral: {
             Token *token = _stream->consume();
-            Literal *literal = _bumpMem.allocObject<Literal>(token->type, *token);
+            Literal *literal = _bumpMem->allocObject<Literal>(token->type, *token);
             return literal;
         }
 
@@ -260,6 +274,6 @@ Expression *Parser::parseAccessOrCallOrLiteral() {
 }
 
 Expression *Parser::parseAccessOrCall() {
-    _errors->add(*_stream->peek(), "Parsing of variable access or call not implemented.");
+    _errors->add(*_stream->consume(), "Parsing of variable access or call not implemented.");
     return nullptr;
 }
