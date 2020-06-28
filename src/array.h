@@ -197,17 +197,15 @@ namespace qak {
     private:
         HeapAllocator &_mem;
         Array<Array<T> *> _items;
-        Array<Array<T> *> _notFreed;
 
         ArrayPool(const ArrayPool<T> &other) = delete;
 
     public:
-        ArrayPool(HeapAllocator &mem) : _mem(mem), _items(mem), _notFreed(mem) {
+        ArrayPool(HeapAllocator &mem) : _mem(mem), _items(mem) {
         }
 
         ~ArrayPool() {
             _items.freeObjects();
-            _notFreed.freeObjects();
         }
 
         Array<T> *obtain(const char *file, int32_t line) {
@@ -218,29 +216,12 @@ namespace qak {
                 result = _items[_items.size() - 1];
                 _items.removeAt(_items.size() - 1);
             }
-            _notFreed.add(result);
             return result;
         }
 
         void free(Array<T> *array) {
-            // BOZO this could be faster. This class is used by the
-            // parser to keep track of dynamic scratch arrays to
-            // minimize allocations during parsing. If obtain/free
-            // follow a stack pattern, the below should be quite fast.
-            size_t lastIdx = _notFreed.size() - 1;
-            int32_t idx = _notFreed[lastIdx] == array
-                          ? lastIdx
-                          : _notFreed.indexOf(array);
-            _notFreed.removeAt(idx);
             array->clear();
             _items.add(array);
-        }
-
-        void freeNotFreed() {
-            for (size_t i = 0; i < _notFreed.size(); i++) {
-                _items.add(_notFreed[i]);
-            }
-            _notFreed.clear();
         }
     };
 }

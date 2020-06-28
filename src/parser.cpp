@@ -4,18 +4,39 @@ using namespace qak;
 
 using namespace qak::ast;
 
+/** Used to keep track of obtained arrays from
+ * an ArrayPool. Frees them when the monitor is
+ * destructed. Can keep track of a maximum of
+ * 4 arrays. */
+template<typename T>
+struct ArrayPoolMonitor {
+    ArrayPool<T> &pool;
+    Array<T> *tracked[4];
+    size_t numTracked;
+
+    ArrayPoolMonitor(ArrayPool<T> &pool) : pool(pool), numTracked(0) {}
+
+    ~ArrayPoolMonitor() {
+        for (size_t i = 0; i < numTracked; i++) {
+            pool.free(tracked[i]);
+        }
+    }
+
+    QAK_FORCE_INLINE Array<T> *obtain(const char *file, int32_t line) {
+        Array<T> *result = pool.obtain(file, line);
+        tracked[numTracked++] = result;
+        return result;
+    }
+};
+
 Module *Parser::parse(Source &source, Errors &errors, BumpAllocator *bumpMem) {
     _source = &source;
     _errors = &errors;
     _bumpMem = bumpMem;
 
-    // Reclaim all pooled arrays the haven't been freed during
-    // the last parse() invocation due to an error.
-    _functionArrayPool.freeNotFreed();
-    _statementArrayPool.freeNotFreed();
-    _variableArrayPool.freeNotFreed();
-    _expressionArrayPool.freeNotFreed();
-    _parameterArrayPool.freeNotFreed();
+    ArrayPoolMonitor<Function *> functionArrays(_functionArrayPool);
+    ArrayPoolMonitor<Statement *> statementArrays(_statementArrayPool);
+    ArrayPoolMonitor<Variable *> variableArrays(_variableArrayPool);
 
     _tokens.clear();
     tokenizer::tokenize(source, _tokens, errors);
@@ -27,9 +48,9 @@ Module *Parser::parse(Source &source, Errors &errors, BumpAllocator *bumpMem) {
     Module *module = parseModule();
     if (!module) return nullptr;
 
-    Array<Function *> *functions = _functionArrayPool.obtain(QAK_SRC_LOC);
-    Array<Statement *> *statements = _statementArrayPool.obtain(QAK_SRC_LOC);
-    Array<Variable *> *variables = _variableArrayPool.obtain(QAK_SRC_LOC);
+    Array<Function *> *functions = functionArrays.obtain(QAK_SRC_LOC);
+    Array<Statement *> *statements = statementArrays.obtain(QAK_SRC_LOC);
+    Array<Variable *> *variables = variableArrays.obtain(QAK_SRC_LOC);
 
     while (_stream->hasMore()) {
         if (_stream->match(QAK_STR("fun"), false)) {
@@ -49,10 +70,6 @@ Module *Parser::parse(Source &source, Errors &errors, BumpAllocator *bumpMem) {
     module->variables.set(*variables);
     module->statements.set(*statements);
     module->functions.set(*functions);
-
-    _variableArrayPool.free(variables);
-    _statementArrayPool.free(statements);
-    _functionArrayPool.free(functions);
 
     return module;
 }
@@ -74,7 +91,8 @@ Function *Parser::parseFunction() {
     Token *name = _stream->expect(Identifier);
     if (!name) return nullptr;
 
-    Array<Parameter *> *parameters = _parameterArrayPool.obtain(QAK_SRC_LOC);
+    ArrayPoolMonitor<Parameter *> parameterArrays(_parameterArrayPool);
+    Array<Parameter *> *parameters = parameterArrays.obtain(QAK_SRC_LOC);
     if (!parseParameters(*parameters)) return nullptr;
 
     TypeSpecifier *returnType = nullptr;
@@ -83,7 +101,8 @@ Function *Parser::parseFunction() {
         if (!returnType) return nullptr;
     }
 
-    Array<Statement *> *statements = _statementArrayPool.obtain(QAK_SRC_LOC);
+    ArrayPoolMonitor<Statement *> statementArrays(_statementArrayPool);
+    Array<Statement *> *statements = statementArrays.obtain(QAK_SRC_LOC);
     while (_stream->hasMore() && !_stream->match(QAK_STR("end"), false)) {
         Statement *statement = parseStatement();
         if (!statement) return nullptr;
@@ -93,8 +112,6 @@ Function *Parser::parseFunction() {
     if (!_stream->expect(QAK_STR("end"))) return nullptr;
 
     Function *function = _bumpMem->allocObject<Function>(*_bumpMem, *name, *parameters, returnType, *statements);
-    _statementArrayPool.free(statements);
-    _parameterArrayPool.free(parameters);
     return function;
 }
 
@@ -163,7 +180,8 @@ While *Parser::parseWhile() {
     Expression *condition = parseExpression();
     if (!condition) return nullptr;
 
-    Array<Statement *> *statements = _statementArrayPool.obtain(QAK_SRC_LOC);
+    ArrayPoolMonitor<Statement *> statementArrays(_statementArrayPool);
+    Array<Statement *> *statements = statementArrays.obtain(QAK_SRC_LOC);
     while (_stream->hasMore() && !_stream->match(QAK_STR("end"), false)) {
         Statement *statement = parseStatement();
         if (statement == nullptr) return nullptr;
@@ -178,7 +196,6 @@ While *Parser::parseWhile() {
 
     While *whileStmt = _bumpMem->allocObject<While>(*_bumpMem, *whileToken, *endToken, condition, *statements);
 
-    _statementArrayPool.free(statements);
     return whileStmt;
 }
 
@@ -188,14 +205,15 @@ If *Parser::parseIf() {
     Expression *condition = parseExpression();
     if (!condition) return nullptr;
 
-    Array<Statement *> *trueBlock = _statementArrayPool.obtain(QAK_SRC_LOC);
+    ArrayPoolMonitor<Statement *> statementArrays(_statementArrayPool);
+    Array<Statement *> *trueBlock = statementArrays.obtain(QAK_SRC_LOC);
     while (_stream->hasMore() && !_stream->match(QAK_STR("end"), false) && !_stream->match(QAK_STR("else"), false)) {
         Statement *statement = parseStatement();
         if (statement == nullptr) return nullptr;
         trueBlock->add(statement);
     }
 
-    Array<Statement *> *falseBlock = _statementArrayPool.obtain(QAK_SRC_LOC);
+    Array<Statement *> *falseBlock = statementArrays.obtain(QAK_SRC_LOC);
     if (_stream->match(QAK_STR("else"), true)) {
         while (_stream->hasMore() && !_stream->match(QAK_STR("end"), false)) {
             Statement *statement = parseStatement();
@@ -208,9 +226,6 @@ If *Parser::parseIf() {
     if (!endToken) return nullptr;
 
     If *ifStmt = _bumpMem->allocObject<If>(*_bumpMem, *ifToken, *endToken, condition, *trueBlock, *falseBlock);
-
-    _statementArrayPool.free(falseBlock);
-    _statementArrayPool.free(trueBlock);
     return ifStmt;
 }
 
@@ -346,15 +361,14 @@ Expression *Parser::parseAccessOrCall() {
 
     // If the next token is "(", we have a function call.
     if (_stream->match(QAK_STR("("), true)) {
-        Array<Expression *> *arguments = parseArguments(_expressionArrayPool.obtain(QAK_SRC_LOC));
+        ArrayPoolMonitor<Expression *> expressionArrays(_expressionArrayPool);
+        Array<Expression *> *arguments = parseArguments(expressionArrays.obtain(QAK_SRC_LOC));
         if (!arguments) return nullptr;
 
         Token *closingParan = _stream->expect(QAK_STR(")"));
         if (!closingParan) return nullptr;
 
         result = _bumpMem->allocObject<FunctionCall>(*_bumpMem, *name, *closingParan, result, *arguments);
-
-        _expressionArrayPool.free(arguments);
     }
     return result;
 }
