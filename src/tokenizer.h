@@ -136,6 +136,7 @@ namespace qak {
                             c = sourceData[index];
                             index++;
                         }
+                        line++;
                         continue;
                     }
                     case ' ':

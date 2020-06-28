@@ -108,11 +108,29 @@ void testFunction() {
     module->print(mem);
 }
 
+void testV01() {
+    Test test("Parser - v0.1");
+    HeapAllocator mem;
+
+    Source *source = io::readFile("data/parser_v_0_1.qak", mem);
+    QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_v_0_1.qak");
+
+    Parser parser(mem);
+    Errors errors(mem);
+    BumpAllocator moduleMem;
+    Module *module = parser.parse(*source, errors, &moduleMem);
+    if (errors.hasErrors()) errors.print();
+    QAK_CHECK(module, "Expected module, got nullptr.");
+
+    module->print(mem);
+}
+
 int main() {
-    testModule();
+    /*testModule();
     testExpression();
     testModuleVariable();
-    testFunction();
-    testBench();
+    testFunction();*/
+    testV01();
+    //testBench();
     return 0;
 }
