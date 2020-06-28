@@ -88,7 +88,7 @@ void testModuleVariable() {
     if (errors.hasErrors()) errors.print();
     QAK_CHECK(module, "Expected module, got nullptr.");
 
-    module->print(mem);
+    parser::printAstNode(module, mem);
 }
 
 void testFunction() {
@@ -105,32 +105,43 @@ void testFunction() {
     if (errors.hasErrors()) errors.print();
     QAK_CHECK(module, "Expected module, got nullptr.");
 
-    module->print(mem);
+    parser::printAstNode(module, mem);
 }
 
 void testV01() {
     Test test("Parser - v0.1");
     HeapAllocator mem;
 
-    Source *source = io::readFile("data/parser_v_0_1.qak", mem);
-    QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_v_0_1.qak");
+    {
+        Source *source = io::readFile("data/parser_v_0_1.qak", mem);
+        QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_v_0_1.qak");
 
-    Parser parser(mem);
-    Errors errors(mem);
-    BumpAllocator moduleMem;
-    Module *module = parser.parse(*source, errors, &moduleMem);
-    if (errors.hasErrors()) errors.print();
-    QAK_CHECK(module, "Expected module, got nullptr.");
+        Parser parser(mem);
+        Errors errors(mem);
+        BumpAllocator moduleMem;
+        Module *module = parser.parse(*source, errors, &moduleMem);
+        if (errors.hasErrors()) errors.print();
+        QAK_CHECK(module, "Expected module, got nullptr.");
 
-    module->print(mem);
+        {
+            HeapAllocator printMem;
+            tokenizer::printTokens(parser.tokens(), printMem);
+            parser::printAstNode(module, printMem);
+        }
+
+        mem.freeObject(source, QAK_SRC_LOC);
+    }
+
+    if (mem.numAllocations() != 0) mem.printAllocations();
+    QAK_CHECK(mem.numAllocations() == 0, "Expected all memory to be deallocated, but %zu allocations remaining.", mem.numAllocations());
 }
 
 int main() {
-    /*testModule();
+    testModule();
     testExpression();
     testModuleVariable();
-    testFunction();*/
+    testFunction();
     testV01();
-    //testBench();
+    testBench();
     return 0;
 }

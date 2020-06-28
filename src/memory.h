@@ -28,7 +28,7 @@ namespace qak {
         size_t _totalFrees;
 
     public:
-        HeapAllocator(): _totalAllocations(0), _totalFrees(0) {};
+        HeapAllocator() : _totalAllocations(0), _totalFrees(0) {};
 
         HeapAllocator(const HeapAllocator &other) = delete;
 

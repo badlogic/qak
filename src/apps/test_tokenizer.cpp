@@ -63,8 +63,8 @@ void testError() {
 }
 
 int main() {
-    testBench();
     testTokenizer();
     testError();
+    testBench();
     return 0;
 }

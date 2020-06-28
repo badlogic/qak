@@ -201,3 +201,15 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
         if (!foundSimple) QAK_ERROR(stream.endSpan(), "Unknown token");
     }
 }
+
+void tokenizer::printTokens(Array<Token> &tokens, HeapAllocator &mem) {
+    size_t lastLine = 1;
+    for (size_t i = 0; i < tokens.size(); i++) {
+        Token &token = tokens[i];
+        if (token.startLine != lastLine) {
+            printf("\n");
+            lastLine = token.startLine;
+        }
+        printf("%s (%d:%d:%d): %s\n", tokenizer::tokenTypeToString(token.type), token.startLine, token.start, token.end, token.toCString(mem));
+    }
+}

@@ -27,6 +27,8 @@ namespace qak {
             buffer->~T();
         }
 
+        Array(const Array<T> &other) = delete;
+
     public:
         Array(HeapAllocator &mem, size_t capacity = 0) : _mem(mem), _size(0), _capacity(0), _buffer(nullptr) {
             if (capacity > 0)
@@ -155,8 +157,10 @@ namespace qak {
         size_t _size;
         T *_buffer;
 
+        FixedArray(const FixedArray<T> &other) = delete;
+
     public:
-        FixedArray(BumpAllocator &mem): _mem(mem), _size(0), _buffer(nullptr) {}
+        FixedArray(BumpAllocator &mem) : _mem(mem), _size(0), _buffer(nullptr) {}
 
         FixedArray(BumpAllocator &mem, Array<T> &array) : _mem(mem), _size(array.size()) {
             if (array.size() > 0) {
@@ -185,6 +189,58 @@ namespace qak {
 
         QAK_FORCE_INLINE size_t size() const {
             return _size;
+        }
+    };
+
+    template<typename T>
+    class ArrayPool {
+    private:
+        HeapAllocator &_mem;
+        Array<Array<T> *> _items;
+        Array<Array<T> *> _notFreed;
+
+        ArrayPool(const ArrayPool<T> &other) = delete;
+
+    public:
+        ArrayPool(HeapAllocator &mem) : _mem(mem), _items(mem), _notFreed(mem) {
+        }
+
+        ~ArrayPool() {
+            _items.freeObjects();
+            _notFreed.freeObjects();
+        }
+
+        Array<T> *obtain(const char *file, int32_t line) {
+            Array<T> *result = nullptr;
+            if (_items.size() == 0) {
+                result = _mem.allocObject<Array<T>>(file, line, _mem);
+            } else {
+                result = _items[_items.size() - 1];
+                _items.removeAt(_items.size() - 1);
+            }
+            _notFreed.add(result);
+            return result;
+        }
+
+        void free(Array<T> *array) {
+            // BOZO this could be faster. This class is used by the
+            // parser to keep track of dynamic scratch arrays to
+            // minimize allocations during parsing. If obtain/free
+            // follow a stack pattern, the below should be quite fast.
+            size_t lastIdx = _notFreed.size() - 1;
+            int32_t idx = _notFreed[lastIdx] == array
+                          ? lastIdx
+                          : _notFreed.indexOf(array);
+            _notFreed.removeAt(idx);
+            array->clear();
+            _items.add(array);
+        }
+
+        void freeNotFreed() {
+            for (size_t i = 0; i < _notFreed.size(); i++) {
+                _items.add(_notFreed[i]);
+            }
+            _notFreed.clear();
         }
     };
 }

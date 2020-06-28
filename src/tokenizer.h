@@ -245,6 +245,9 @@ namespace qak {
         /** Returns a string representation for the token type, e.g. TokenType::Identifier
          * returns "Identifier". */
         const char *tokenTypeToString(TokenType type);
+
+        /** Prints the tokens to stdout, grouping them by line. */
+        void printTokens(Array<Token> &tokens, HeapAllocator &mem);
     }
 
     /**
@@ -287,8 +290,8 @@ namespace qak {
             if (!result) {
                 Token *token = (uint64_t) _index < _tokens.size() ? &_tokens[_index] : nullptr;
                 if (token == nullptr)
-                    _errors.add({_source, (uint32_t) _source.size - 1, (uint32_t) _source.lines().size() + 1, (uint32_t) _source.size - 1,
-                                 (uint32_t) _source.lines().size() + 1}, "Expected '%s', but reached the end of the source.",
+                    _errors.add({_source, (uint32_t) _source.size - 1, (uint32_t) _source.lines().size() - 1, (uint32_t) _source.size - 1,
+                                 (uint32_t) _source.lines().size() - 1}, "Expected '%s', but reached the end of the source.",
                                 tokenizer::tokenTypeToString(type));
                 else {
                     HeapAllocator mem;
@@ -307,8 +310,8 @@ namespace qak {
             if (!result) {
                 Token *token = (uint64_t) _index < _tokens.size() ? &_tokens[_index] : nullptr;
                 if (token == nullptr) {
-                    _errors.add({_source, (uint32_t) _source.size - 1, (uint32_t) _source.lines().size() + 1, (uint32_t) _source.size - 1,
-                                 (uint32_t) _source.lines().size() + 1}, "Expected '%s', but reached the end of the source.", text);
+                    _errors.add({_source, (uint32_t) _source.size - 1, (uint32_t) _source.lines().size() - 1, (uint32_t) _source.size - 1,
+                                 (uint32_t) _source.lines().size() - 1}, "Expected '%s', but reached the end of the source.", text);
                 } else {
                     HeapAllocator mem;
                     _errors.add(*token, "Expected '%s', but got '%s'", text, token->toCString(mem));
