@@ -12,7 +12,7 @@ namespace qak {
         Span span;
         const char *message;
 
-        Error(Span &span, const char *message) : span(span), message(message) {}
+        Error(Span span, const char *message) : span(span), message(message) {}
 
         Line &getLine();
 
@@ -27,7 +27,7 @@ namespace qak {
 
         void add(Error error);
 
-        void add(Span &span, const char *msg...);
+        void add(Span span, const char *msg...);
 
         Array <Error> &getErrors();
 
