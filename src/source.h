@@ -96,7 +96,7 @@ namespace qak {
      * is given as start and end byte offsets into the data of the Source, as well
      * as the start and end line number spanned by the byte sequence in the Source.
      * See Source::lines(). The actual byte data is maintained by the Source. */
-    struct Span {
+    struct alignas(8) Span {
         /* The Source the span references */
         Source &source;
 
