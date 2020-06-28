@@ -31,7 +31,7 @@ void Errors::add(Error error) {
     errors.add(error);
 }
 
-void Errors::add(Span span, const char *msg...) {
+void Errors::add(Span &span, const char *msg...) {
     va_list args;
     va_start(args, msg);
 

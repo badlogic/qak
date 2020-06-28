@@ -13,7 +13,7 @@ void testBench() {
     Source *source = io::readFile("data/parser_function.qak", mem);
     QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_benchmark.qak");
 
-    uint64_t start = io::timeMillis();
+    double start = io::timeMillis();
     Parser parser(mem);
     Errors errors(mem);
 

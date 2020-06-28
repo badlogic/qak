@@ -7,7 +7,7 @@ namespace qak {
     namespace io {
         Source *readFile(const char *fileName, HeapAllocator &mem);
 
-        uint64_t timeMillis();
+        double timeMillis();
     }
 }
 

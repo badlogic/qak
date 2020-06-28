@@ -9,6 +9,8 @@
 
 using namespace qak;
 
+
+
 Source *io::readFile(const char *fileName, HeapAllocator &mem) {
     FILE *file = fopen(fileName, "rb");
     if (file == nullptr) {
@@ -29,7 +31,7 @@ Source *io::readFile(const char *fileName, HeapAllocator &mem) {
 
 static bool isTimeSetup = false;
 
-uint64_t io::timeMillis() {
+double io::timeMillis() {
     if (!isTimeSetup) {
         stm_setup();
         isTimeSetup = true;

@@ -51,13 +51,13 @@ namespace qak {
             for (size_t i = 0; i < size; i++) {
                 uint8_t c = data[i];
                 if (c == '\n') {
-                    _lines.add(Line(lineStart, i, _lines.size()));
-                    lineStart = i + 1;
+                    _lines.add(Line(lineStart, (uint32_t)i, (uint32_t)_lines.size()));
+                    lineStart = (uint32_t)i + 1;
                 }
             }
 
             if (_lines[_lines.size()].start != lineStart) {
-                _lines.add(Line(lineStart, size, _lines.size()));
+                _lines.add(Line(lineStart, (uint32_t)size, (uint32_t)_lines.size()));
             }
         }
 
@@ -96,7 +96,7 @@ namespace qak {
      * is given as start and end byte offsets into the data of the Source, as well
      * as the start and end line number spanned by the byte sequence in the Source.
      * See Source::lines(). The actual byte data is maintained by the Source. */
-    struct alignas(8) Span {
+    struct Span {
         /* The Source the span references */
         Source &source;
 
