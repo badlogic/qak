@@ -10,8 +10,8 @@ void testBench() {
     Test test("Parser - Benchmark");
     HeapAllocator mem;
 
-    Source *source = io::readFile("data/parser_v_0_1.qak", mem);
-    QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_v_0_1.qak");
+    Source *source = io::readFile("data/parser_benchmark.qak", mem);
+    QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_benchmark.qak");
 
     double start = io::timeMillis();
     Parser parser(mem);
@@ -19,7 +19,7 @@ void testBench() {
 
     printf("Total allocations before benchmark: %zu\n", mem.totalAllocations());
 
-    uint32_t iterations = 1000000;
+    uint32_t iterations = 100000;
     for (uint32_t i = 0; i < iterations; i++) {
         BumpAllocator moduleMem;
         Module *module = parser.parse(*source, errors, &moduleMem);
