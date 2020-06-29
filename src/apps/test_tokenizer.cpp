@@ -9,8 +9,8 @@ void testBench() {
     Test test("Tokenizer - Benchmark");
     double start = io::timeMillis();
     HeapAllocator mem;
-    Source *source = io::readFile("data/tokens.qak", mem);
-    QAK_CHECK(source != nullptr, "Couldn't read test file data/tokens.qak");
+    Source *source = io::readFile("data/parser_v_0_1.qak", mem);
+    QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_v_0_1.qak");
 
     Array<Token> tokens(mem);
     Errors errors(mem);

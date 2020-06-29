@@ -10,8 +10,8 @@ void testBench() {
     Test test("Parser - Benchmark");
     HeapAllocator mem;
 
-    Source *source = io::readFile("data/parser_function.qak", mem);
-    QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_benchmark.qak");
+    Source *source = io::readFile("data/parser_v_0_1.qak", mem);
+    QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_v_0_1.qak");
 
     double start = io::timeMillis();
     Parser parser(mem);
