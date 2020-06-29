@@ -13,8 +13,7 @@ using namespace qak;
 
 Source *io::readFile(const char *fileName, HeapAllocator &mem) {
     FILE *file = fopen(fileName, "rb");
-    if (file == nullptr) {
-        fclose(file);
+    if (file == nullptr) {        
         return nullptr;
     }
 
