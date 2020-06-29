@@ -322,8 +322,8 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
                 continue;
             }
 
-            character = stream.peek();
-            if (character == '=') {
+            uint32_t nextCharacter = stream.peek();
+            if (nextCharacter == '=') {
                 stream.consume();
                 switch (type) {
                     case Less:
@@ -338,6 +338,8 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
                     case Assignment:
                         tokens.add({(TokenType) Equal, stream.endSpan()});
                         break;
+                    default:
+                        QAK_ERROR(stream.endSpan(), "Found unknown two character token");
                 }
             } else {
                 tokens.add({(TokenType) type, stream.endSpan()});
