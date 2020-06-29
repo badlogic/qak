@@ -62,6 +62,37 @@ void testError() {
     errors.getErrors()[0].print();
 }
 
+void generateLiteralToTokenArray() {
+    HeapAllocator mem;
+    uint32_t type = Period;
+    Array<TokenType> types(mem);
+    types.setSize(256, Unknown);
+
+    // Else check for simple tokens
+    while (type != Unknown) {
+        const char *literal = tokenizer::tokenTypeToString((TokenType) type);
+        if (strlen(literal) == 1) {
+            types.buffer()[literal[0]] = (TokenType)type;
+        } else {
+            printf("Non single-character literal: %s\n", literal);
+        }
+        type++;
+    }
+
+    printf("static const uint32_t literalToTokenType[] = {\n");
+    for (int i = 0; i < types.size(); i++) {
+        printf("\t%d", types[i]);
+        if (i < types.size() - 1)
+            if (types[i] != Unknown)
+                printf(", // %s\n", tokenizer::tokenTypeToString(types[i]));
+            else
+                printf(",\n", tokenizer::tokenTypeToString(types[i]));
+        else
+            printf("\n");
+    }
+    printf("};");
+}
+
 int main() {
     testTokenizer();
     testError();

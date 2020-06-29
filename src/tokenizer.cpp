@@ -2,6 +2,135 @@
 
 using namespace qak;
 
+static const uint32_t literalToTokenType[] = {
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        25, // !
+        28,
+        26, // #
+        28,
+        8, // %
+        22, // &
+        28,
+        9, // (
+        10, // )
+        6, // *
+        4, // +
+        1, // ,
+        5, // -
+        0, // .
+        7, // /
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        3, // :
+        2, // ;
+        19, // <
+        21, // =
+        20, // >
+        27, // ?
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        11, // [
+        28,
+        12, // ]
+        24, // ^
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        13, // {
+        23, // |
+        14, // }
+};
+
 const char *tokenizer::tokenTypeToString(TokenType type) {
     switch (type) {
         case Period:
@@ -60,8 +189,6 @@ const char *tokenizer::tokenTypeToString(TokenType type) {
             return "#";
         case QuestionMark:
             return "?";
-        case DoubleQuote:
-            return "\"";
         case BooleanLiteral:
             return "Boolean literal";
         case DoubleLiteral:
@@ -84,8 +211,8 @@ const char *tokenizer::tokenTypeToString(TokenType type) {
             return "Null literal";
         case Identifier:
             return "Identifier";
-        case LastSimpleTokenType:
-            return "Last simple token type marker";
+        case Unknown:
+            return "Unknown";
     }
     return nullptr;
 }
@@ -181,24 +308,44 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
             continue;
         }
 
-        // Simple tokens, start with first type in enum,
-        // iterate until LastSimpleTokenType.
-        uint32_t type = Period;
+        // Else check for "simple" tokens made up of
+        // 1 character literals, like ".", or "[",
+        // and 2 character literals.
         stream.startSpan();
-        bool foundSimple = false;
-        while (type != LastSimpleTokenType) {
-            const char *literal = tokenTypeToString((TokenType) type);
-            if (literal != nullptr) {
-                if (stream.match(literal, true)) {
-                    tokens.add({(TokenType) type, stream.endSpan()});
-                    foundSimple = true;
-                    break;
-                }
+        uint32_t character = stream.consume();
+        TokenType type = Unknown;
+        if (character < sizeof(literalToTokenType)) {
+            type = (TokenType)literalToTokenType[character];
+            if (type == Unknown) QAK_ERROR(stream.endSpan(), "Unknown token");
+            if (!stream.hasMore()) {
+                tokens.add({(TokenType) type, stream.endSpan()});
+                continue;
             }
-            type++;
+
+            character = stream.peek();
+            if (character == '=') {
+                stream.consume();
+                switch (type) {
+                    case Less:
+                        tokens.add({(TokenType) LessEqual, stream.endSpan()});
+                        break;
+                    case Greater:
+                        tokens.add({(TokenType) GreaterEqual, stream.endSpan()});
+                        break;
+                    case Not:
+                        tokens.add({(TokenType) NotEqual, stream.endSpan()});
+                        break;
+                    case Assignment:
+                        tokens.add({(TokenType) Equal, stream.endSpan()});
+                        break;
+                }
+            } else {
+                tokens.add({(TokenType) type, stream.endSpan()});
+            }
+            continue;
         }
 
-        if (!foundSimple) QAK_ERROR(stream.endSpan(), "Unknown token");
+        QAK_ERROR(stream.endSpan(), "Unknown token");
     }
 }
 

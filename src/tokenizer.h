@@ -72,9 +72,20 @@ namespace qak {
             return _index < _end;
         }
 
+        /* Returns whether the stream has numChars more UTF-8 characters */
+        QAK_FORCE_INLINE bool hasMore(size_t numChars) {
+            return _index + numChars - 1 < _end;
+        }
+
         /* Returns the current UTF-8 character and advances to the next character */
         QAK_FORCE_INLINE uint32_t consume() {
             return nextUtf8Character(_source.data, &_index);
+        }
+
+        /* Returns the current UTF-8 character without advancing to the next character */
+        QAK_FORCE_INLINE uint32_t peek() {
+            uint32_t i = _index;
+            return nextUtf8Character(_source.data, &i);
         }
 
         /* Returns true if the current UTF-8 character matches the needle, false otherwise.
@@ -233,8 +244,7 @@ namespace qak {
         Not,
         Hash,
         QuestionMark,
-        DoubleQuote,
-        LastSimpleTokenType,
+        Unknown,
 
         // These don't have a literal representation
         BooleanLiteral,
