@@ -2,6 +2,12 @@
 #include "io.h"
 #include "parser.h"
 
+#ifdef WASM
+#include "emscripten.h"
+#else
+#define EMSCRIPTEN_KEEPALIVE
+#endif
+
 using namespace qak;
 
 struct Compiler {
@@ -32,14 +38,14 @@ struct Module {
     }
 };
 
-qak_compiler qak_compiler_new() {
+EMSCRIPTEN_KEEPALIVE qak_compiler qak_compiler_new() {
     HeapAllocator *mem = new HeapAllocator();
     BumpAllocator *bumpMem = new BumpAllocator();
     Compiler *compiler = mem->allocObject<Compiler>(QAK_SRC_LOC, bumpMem, mem);
     return compiler;
 }
 
-void qak_compiler_delete(qak_compiler compilerHandle) {
+EMSCRIPTEN_KEEPALIVE void qak_compiler_delete(qak_compiler compilerHandle) {
     Compiler *compiler = (Compiler *) compilerHandle;
     BumpAllocator *bumpMem = compiler->bumpMem;
     HeapAllocator *mem = compiler->mem;
@@ -49,7 +55,7 @@ void qak_compiler_delete(qak_compiler compilerHandle) {
     delete bumpMem;
 }
 
-qak_module qak_compile_file(qak_compiler compilerHandle, const char *fileName) {
+EMSCRIPTEN_KEEPALIVE qak_module qak_compile_file(qak_compiler compilerHandle, const char *fileName) {
     Compiler *compiler = (Compiler *) compilerHandle;
     Source *source = io::readFile(fileName, *compiler->mem);
     if (source == nullptr) return nullptr;
@@ -66,8 +72,19 @@ qak_module qak_compile_file(qak_compiler compilerHandle, const char *fileName) {
     return module;
 }
 
-void qak_module_delete(qak_module moduleHandle) {
+EMSCRIPTEN_KEEPALIVE void qak_module_delete(qak_module moduleHandle) {
     Module *module = (Module *) moduleHandle;
     HeapAllocator &mem = module->mem;
     mem.freeObject(module, QAK_SRC_LOC);
 }
+
+EMSCRIPTEN_KEEPALIVE int qak_version() {
+	return 123;
+}
+
+// BOZO linker complains otherwise, dunno why.
+#ifdef WASM
+EMSCRIPTEN_KEEPALIVE int main(int argc, char** argv) {
+	return 0;
+}
+#endif

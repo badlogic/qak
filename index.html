@@ -1,0 +1,11 @@
+<script src="qak.js"></script>
+<script>
+  Module.onRuntimeInitialized = _ => {
+	const qak_version = Module.cwrap("qak_version", "number", []);
+	const qak_compiler_new = Module.cwrap("qak_compiler_new", "ptr", []);
+	const qak_compiler_delete = Module.cwrap("qak_compiler_new", "void", ["ptr"]);
+	alert(qak_version());
+	var compiler = qak_compiler_new();
+	qak_compiler_delete(compiler);
+  };
+</script>

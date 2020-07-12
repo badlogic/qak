@@ -18,6 +18,8 @@ qak_module qak_compile_file(qak_compiler compiler, const char *fileName);
 
 void qak_module_delete(qak_module moduleHandle);
 
+int qak_version();
+
 #ifdef __cplusplus
 }
 #endif

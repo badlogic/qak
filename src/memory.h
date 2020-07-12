@@ -4,6 +4,7 @@
 #include "types.h"
 #include <map>
 #include <string.h>
+#include <cstdio>
 
 // Default block size of the BumpAllocator
 #define QAK_BLOCK_SIZE (512 * 16)
