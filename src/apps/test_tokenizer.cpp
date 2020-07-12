@@ -39,6 +39,7 @@ void testTokenizer() {
     tokenizer::tokenize(*source, tokens, errors);
 
     QAK_CHECK(tokens.size() == 42, "Expected 42 tokens, got %zu", tokens.size())
+    if (errors.hasErrors()) errors.print();
     QAK_CHECK(errors.getErrors().size() == 0, "Expected 0 errors, got %zu", errors.getErrors().size());
 
     for (uint32_t i = 0; i < tokens.size(); i++) {

@@ -256,7 +256,7 @@ namespace qak {
         ByteLiteral,
         CharacterLiteral,
         StringLiteral,
-        NullLiteral,
+        NothingLiteral,
         Identifier
     };
 
@@ -377,7 +377,7 @@ namespace qak {
         /* Matches and optionally consumes the next token in case of a match. Returns whether the token matched. */
         QAK_FORCE_INLINE bool match(const char *text, uint32_t len, bool consume) {
             if (_index >= _tokens.size()) return false;
-            if (_tokens[_index].match(text, len)) {
+            if (_tokens[_index].matches(text, len)) {
                 if (consume) _index++;
                 return true;
             }

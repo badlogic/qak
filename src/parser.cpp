@@ -338,7 +338,7 @@ Expression *Parser::parseAccessOrCallOrLiteral() {
         case IntegerLiteral:
         case LongLiteral:
         case CharacterLiteral:
-        case NullLiteral: {
+        case NothingLiteral: {
             Token *token = _stream->consume();
             Literal *literal = _bumpMem->allocObject<Literal>(token->type, *token);
             return literal;

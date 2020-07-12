@@ -207,8 +207,8 @@ const char *tokenizer::tokenTypeToString(TokenType type) {
             return "Character literal";
         case StringLiteral:
             return "String literal";
-        case NullLiteral:
-            return "Null literal";
+        case NothingLiteral:
+            return "Nothing literal";
         case Identifier:
             return "Identifier";
         case Unknown:
@@ -223,11 +223,11 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
     while (stream.hasMore()) {
         stream.skipWhiteSpace();
         if (!stream.hasMore()) break;
+        stream.startSpan();
 
         // Numbers
         if (stream.matchDigit(false)) {
             TokenType type = IntegerLiteral;
-            stream.startSpan();
             if (stream.match("0x", true)) {
                 while (stream.matchHex(true));
             } else {
@@ -256,9 +256,7 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
         }
 
         // Character literal
-        if (stream.match("'", false)) {
-            stream.startSpan();
-            stream.consume();
+        if (stream.match("'", true)) {
             // Note: escape sequences like \n are parsed in the AST
             stream.match("\\", true);
             stream.consume();
@@ -269,7 +267,6 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
 
         // String literal
         if (stream.match("\"", true)) {
-            stream.startSpan();
             bool matchedEndQuote = false;
             while (stream.hasMore()) {
                 // Note: escape sequences like \n are parsed in the AST
@@ -292,16 +289,14 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
         }
 
         // Identifier, keyword, boolean literal, or null literal
-        if (stream.matchIdentifierStart(false)) {
-            stream.startSpan();
-            stream.consume();
+        if (stream.matchIdentifierStart(true)) {
             while (stream.matchIdentifierPart(true));
             Span identifier = stream.endSpan();
 
-            if (identifier.match(QAK_STR("true")) || identifier.match(QAK_STR("false"))) {
+            if (identifier.matches(QAK_STR("true")) || identifier.matches(QAK_STR("false"))) {
                 tokens.add({BooleanLiteral, identifier});
-            } else if (identifier.match(QAK_STR("null"))) {
-                tokens.add({NullLiteral, identifier});
+            } else if (identifier.matches(QAK_STR("nothing"))) {
+                tokens.add({NothingLiteral, identifier});
             } else {
                 tokens.add({Identifier, identifier});
             }
@@ -311,7 +306,6 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
         // Else check for "simple" tokens made up of
         // 1 character literals, like ".", or "[",
         // and 2 character literals.
-        stream.startSpan();
         uint32_t character = stream.consume();
         TokenType type = Unknown;
         if (character < sizeof(literalToTokenType)) {

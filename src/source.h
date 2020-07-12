@@ -142,7 +142,7 @@ namespace qak {
 
         /* Returns whether the bytes making up the span matches the needle. The length of the needle
          * is given in number of bytes. */
-        QAK_FORCE_INLINE bool match(const char *needle, uint32_t length) {
+        QAK_FORCE_INLINE bool matches(const char *needle, uint32_t length) {
             if (end - start != length) return false;
 
             const uint8_t *sourceData = source.data + start;
