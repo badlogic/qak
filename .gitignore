@@ -4,3 +4,5 @@ cmake-build-release
 .DS_Store
 .vs
 out
+qak.wasm
+qak.js
