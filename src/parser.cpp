@@ -322,7 +322,12 @@ Expression *Parser::parseUnaryOperator() {
 
 Expression *Parser::parseAccessOrCallOrLiteral() {
     if (!_stream->hasMore()) {
-        _errors->add(*_stream->peek(), "Expected a variable, field, array, function call, method call, or literal.");
+        if (_stream->getTokens().size() > 0) {
+            Token token = _stream->getTokens()[_stream->getTokens().size() - 1];
+            _errors->add(token, "Expected a variable, field, array, function call, method call, or literal.");
+        } else {
+            _errors->add(Span(*_source, 0, 0, 0, 0), "Expected a variable, field, array, function call, method call, or literal.");
+        }
         return nullptr;
     }
 

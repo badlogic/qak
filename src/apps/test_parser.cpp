@@ -136,7 +136,26 @@ void testV01() {
     QAK_CHECK(mem.numAllocations() == 0, "Expected all memory to be deallocated, but %zu allocations remaining.", mem.numAllocations());
 }
 
+void testError() {
+    Test test("Parser - function");
+    HeapAllocator mem;
+
+    Source *source = Source::fromMemory(mem, "source", "module test while");
+    QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_function.qak");
+
+    Parser parser(mem);
+    Errors errors(mem);
+    BumpAllocator moduleMem;
+    Module *module = parser.parse(*source, errors, &moduleMem);
+    if (errors.hasErrors()) errors.print();
+    QAK_CHECK(module, "Expected module, got nullptr.");
+
+    parser::printAstNode(module, mem);
+}
+
 int main() {
+    testError();
+
     testModule();
     testExpression();
     testModuleVariable();

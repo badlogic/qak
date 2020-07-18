@@ -51,13 +51,13 @@ namespace qak {
             for (size_t i = 0; i < size; i++) {
                 uint8_t c = data[i];
                 if (c == '\n') {
-                    _lines.add(Line(lineStart, (uint32_t)i, (uint32_t)_lines.size()));
-                    lineStart = (uint32_t)i + 1;
+                    _lines.add(Line(lineStart, (uint32_t) i, (uint32_t) _lines.size()));
+                    lineStart = (uint32_t) i + 1;
                 }
             }
 
-            if (_lines[_lines.size()].start != lineStart) {
-                _lines.add(Line(lineStart, (uint32_t)size, (uint32_t)_lines.size()));
+            if (lineStart < size) {
+                _lines.add(Line(lineStart, (uint32_t) size, (uint32_t) _lines.size()));
             }
         }
 
@@ -79,7 +79,7 @@ namespace qak {
 
         ~Source() {
             if (fileName) {
-                mem.free((void*)fileName, QAK_SRC_LOC);
+                mem.free((void *) fileName, QAK_SRC_LOC);
                 fileName = nullptr;
             }
             if (data) {
@@ -93,6 +93,20 @@ namespace qak {
         Array<Line> &lines() {
             scanLines();
             return _lines;
+        }
+
+        /* Creates a new Source with the given file name and source code. The name and
+         * source code are copied defensively.*/
+        static Source *fromMemory(HeapAllocator &mem, const char *fileName, const char *sourceCode) {
+            size_t dataLength = strlen(sourceCode);
+            uint8_t *data = mem.alloc<uint8_t>(dataLength, QAK_SRC_LOC);
+            memcpy(data, sourceCode, dataLength);
+
+            size_t fileNameLength = strlen(fileName);
+            char *fileNameCopy = mem.alloc<char>(fileNameLength, QAK_SRC_LOC);
+            memcpy(fileNameCopy, fileName, fileNameLength);
+            Source *source = mem.allocObject<Source>(QAK_SRC_LOC, mem, fileNameCopy, data, dataLength);
+            return source;
         }
     };
 

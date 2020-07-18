@@ -43,7 +43,6 @@ EMSCRIPTEN_KEEPALIVE qak_compiler qak_compiler_new() {
     HeapAllocator *mem = new HeapAllocator();
     BumpAllocator *bumpMem = new BumpAllocator();
     Compiler *compiler = mem->allocObject<Compiler>(QAK_SRC_LOC, bumpMem, mem);
-    printf("Created compiler\n");
     return compiler;
 }
 
@@ -85,15 +84,7 @@ EMSCRIPTEN_KEEPALIVE qak_module qak_compile_source(qak_compiler compilerHandle, 
     Compiler *compiler = (Compiler *) compilerHandle;
     HeapAllocator &mem = *compiler->mem;
 
-    size_t dataLength = strlen(sourceData);
-    uint8_t *data = mem.alloc<uint8_t>(dataLength, QAK_SRC_LOC);
-    memcpy(data, sourceData, dataLength);
-
-    size_t fileNameLength = strlen(fileName);
-    char* fileNameCopy = mem.alloc<char>(fileNameLength, QAK_SRC_LOC);
-    memcpy(fileNameCopy, fileName, fileNameLength);
-
-    Source *source = mem.allocObject<Source>(QAK_SRC_LOC, mem, fileNameCopy, data, dataLength);
+    Source *source = Source::fromMemory(mem, fileName, sourceData);
     if (source == nullptr) return nullptr;
 
     return qak_compile(compiler, source);
@@ -128,7 +119,6 @@ EMSCRIPTEN_KEEPALIVE void qak_module_print_ast(qak_module moduleHandle) {
 }
 
 EMSCRIPTEN_KEEPALIVE int qak_version() {
-    printf("Hello world.\n");
 	return 123;
 }
 

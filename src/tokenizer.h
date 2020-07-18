@@ -383,6 +383,11 @@ namespace qak {
             }
             return false;
         }
+
+        /* Returns the tokens of the underlying stream */
+        QAK_FORCE_INLINE Array<Token> &getTokens() {
+            return _tokens;
+        }
     };
 }
 
