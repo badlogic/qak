@@ -1,0 +1,113 @@
+<html>
+<head>
+    <script src="qak.js"></script>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="vs/editor/editor.main.css">
+</head>
+
+<style>
+    body {
+        margin: 0;
+        padding: 1em;
+        background: #333333;
+        color: #E1E1E1;
+        font-family: "Courier New";
+    }
+
+    #container {
+        margin: 0 auto;
+        width: 800px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #editor {
+        width: 100%;
+        height: 100%;
+    }
+
+    #stdout {
+        width: 100%;
+        height: 100%;
+        background: #252526;
+        overflow: auto;
+        font-size: 14px;
+    }
+</style>
+
+<body>
+    <div id="container">
+        <h1>Qak playground</h1>
+        <div id="editor"></div>
+        <pre id="stdout"></div>
+    </div>
+
+    <script>var require = { paths: { 'vs': 'vs' } };</script>
+    <script>
+        var stdout = document.getElementById("stdout");
+        var oldConsoleLog = console.log;
+        console.log = (str) => {
+            stdout.innerHTML += str + "<br>"
+            oldConsoleLog(str);
+        }
+
+        var lastModule = 0;
+        qak.init(() => {
+            stdout.innerHTML = "";
+            createEditor();
+        });
+
+        // This is ridiculous, but it seems the Monaco editor interacts badly
+        // with loading WASM modules. Couldn't figure out a better way to load
+        // the Monaco editor after the WASM module.
+        var createEditor = () => {
+            var s = document.createElement("script");
+            s.src = "vs/loader.js"
+            document.body.appendChild(s);
+            s.onload = () => {
+                s = document.createElement("script");
+                s.src = "vs/editor/editor.main.nls.js";
+                document.body.appendChild(s);
+                s.onload = () => {
+                    s = document.createElement("script");
+                    s.src = "vs/editor/editor.main.js";
+                    document.body.appendChild(s);
+                    s.onload = () => {
+                        var editor = monaco.editor.create(document.getElementById("editor"), {
+                            value: "",
+                            automaticLayout: true,
+                            theme: "vs-dark",
+                        });
+
+                        editor.onDidChangeModelContent(function (e) {
+                            if (lastModule != 0) {
+                                qak.deleteModule(lastModule);
+                                lastModule = 0;
+                            }
+                            stdout.innerHTML = "";
+                            lastModule = qak.compileSource("source", editor.getValue());
+                            if (lastModule == 0) {
+                                console.log("Error compiling source.");
+                            } else {
+                                if (qak.hasErrors(lastModule)) {
+                                    qak.printErrors(lastModule);
+                                } else {
+                                    console.log("=== Tokens:")
+                                    qak.printTokens(lastModule);
+                                    console.log("\n=== AST")
+                                    qak.printAst(lastModule);
+                                }
+                            }
+                        });
+
+                        editor.setValue("module test");
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

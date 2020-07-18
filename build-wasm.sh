@@ -1,7 +1,10 @@
 #!/bin/bash
 SOURCES=`find src -name *.cpp -maxdepth 1`
-emcc -O3 -s WASM=1 -DWASM \
-	 -s LLD_REPORT_UNDEFINED \
-	 -s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' \
-	 -Isrc $SOURCES \
-	 -o qak.js
+emcc -O0 -DWASM \
+	-s WASM=1 \
+	-s LLD_REPORT_UNDEFINED \
+	-s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap", "allocateUTF8"]' \
+	--extern-pre-js wasm/qak_pre.js \
+	--extern-post-js wasm/qak_post.js \
+	-Isrc $SOURCES \
+	-o wasm/qak.js

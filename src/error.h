@@ -29,6 +29,8 @@ namespace qak {
 
         void add(Span span, const char *msg...);
 
+        void addAll(Errors &errors);
+
         Array <Error> &getErrors();
 
         bool hasErrors();

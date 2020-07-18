@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "qak_c_api.h"
+#include "qak.h"
 
 void printHelp() {
     printf("Usage: qak <file.qak>");

@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "qak_c_api.h"
+#include "qak.h"
 #include "test.h"
 
 int main() {

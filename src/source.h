@@ -78,6 +78,10 @@ namespace qak {
         }
 
         ~Source() {
+            if (fileName) {
+                mem.free((void*)fileName, QAK_SRC_LOC);
+                fileName = nullptr;
+            }
             if (data) {
                 mem.free(data, QAK_SRC_LOC);
                 data = nullptr;

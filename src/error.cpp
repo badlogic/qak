@@ -47,6 +47,12 @@ void Errors::add(Span span, const char *msg...) {
     add({span, buffer});
 }
 
+void Errors::addAll(Errors &errors) {
+    for (size_t i = 0; i < errors.getErrors().size(); i++) {
+        add(errors.getErrors()[i]);
+    }
+}
+
 Array<Error> &Errors::getErrors() {
     return errors;
 }
