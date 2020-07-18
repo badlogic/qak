@@ -284,7 +284,7 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
             }
             if (!matchedEndQuote) QAK_ERROR(stream.endSpan(), "String literal is not closed by double quote");
             Span stringSpan = stream.endSpan();
-            tokens.add({StringLiteral, Span(stringSpan.source, stringSpan.start - 1, stringSpan.startLine, stringSpan.end, stringSpan.endLine)});
+            tokens.add({StringLiteral, Span(stringSpan.source, stringSpan.start, stringSpan.startLine, stringSpan.end, stringSpan.endLine)});
             continue;
         }
 
