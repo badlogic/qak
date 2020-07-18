@@ -1,3 +1,5 @@
 var qak = {};
+qak.Module = {}
 
-((qak) => {
+qak.initWasm = () => {
+    Module = qak.Module;

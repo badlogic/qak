@@ -45,6 +45,10 @@
     </div>
 
     <script>var require = { paths: { 'vs': 'vs' } };</script>
+    <script src="vs/loader.js"></script>
+    <script src="vs/editor/editor.main.nls.js"></script>
+    <script src="vs/editor/editor.main.js"></script>
+
     <script>
         var stdout = document.getElementById("stdout");
         var oldConsoleLog = console.log;
@@ -63,49 +67,34 @@
         // with loading WASM modules. Couldn't figure out a better way to load
         // the Monaco editor after the WASM module.
         var createEditor = () => {
-            var s = document.createElement("script");
-            s.src = "vs/loader.js"
-            document.body.appendChild(s);
-            s.onload = () => {
-                s = document.createElement("script");
-                s.src = "vs/editor/editor.main.nls.js";
-                document.body.appendChild(s);
-                s.onload = () => {
-                    s = document.createElement("script");
-                    s.src = "vs/editor/editor.main.js";
-                    document.body.appendChild(s);
-                    s.onload = () => {
-                        var editor = monaco.editor.create(document.getElementById("editor"), {
-                            value: "",
-                            automaticLayout: true,
-                            theme: "vs-dark",
-                        });
+            var editor = monaco.editor.create(document.getElementById("editor"), {
+                value: "",
+                automaticLayout: true,
+                theme: "vs-dark",
+            });
 
-                        editor.onDidChangeModelContent(function (e) {
-                            if (lastModule != 0) {
-                                qak.deleteModule(lastModule);
-                                lastModule = 0;
-                            }
-                            stdout.innerHTML = "";
-                            lastModule = qak.compileSource("source", editor.getValue());
-                            if (lastModule == 0) {
-                                console.log("Error compiling source.");
-                            } else {
-                                if (qak.hasErrors(lastModule)) {
-                                    qak.printErrors(lastModule);
-                                } else {
-                                    console.log("=== Tokens:")
-                                    qak.printTokens(lastModule);
-                                    console.log("\n=== AST")
-                                    qak.printAst(lastModule);
-                                }
-                            }
-                        });
-
-                        editor.setValue("module test");
+            editor.onDidChangeModelContent(function (e) {
+                if (lastModule != 0) {
+                    qak.deleteModule(lastModule);
+                    lastModule = 0;
+                }
+                stdout.innerHTML = "";
+                lastModule = qak.compileSource("source", editor.getValue());
+                if (lastModule == 0) {
+                    console.log("Error compiling source.");
+                } else {
+                    if (qak.hasErrors(lastModule)) {
+                        qak.printErrors(lastModule);
+                    } else {
+                        console.log("=== Tokens:")
+                        qak.printTokens(lastModule);
+                        console.log("\n=== AST")
+                        qak.printAst(lastModule);
                     }
                 }
-            }
+            });
+
+            editor.setValue("module test");
         }
     </script>
 </body>

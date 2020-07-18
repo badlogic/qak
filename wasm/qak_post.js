@@ -1,10 +1,10 @@
 
     out = (str) => { console.log(str); }
     err = (str) => { console.log(str); }
-    qak.Module = Module;
-})(qak);
+};
 
 qak.init = function(onReady) {
+    qak.Module = {};
     qak.Module.onRuntimeInitialized = _ => {
         const Module = qak.Module;
         const qak_version = Module.cwrap("qak_version", "number", []);
@@ -48,4 +48,6 @@ qak.init = function(onReady) {
 
         if (onReady) onReady();
     };
+
+    qak.initWasm();
 }
