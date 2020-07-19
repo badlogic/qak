@@ -1,6 +1,5 @@
 <html>
 <head>
-    <script src="qak.js"></script>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
     <link rel="stylesheet" data-name="vs/editor/editor.main" href="vs/editor/editor.main.css">
@@ -41,15 +40,18 @@
     <div id="container">
         <h1>Qak playground</h1>
         <div id="editor"></div>
-        <pre id="stdout"></div>
+        <pre id="stdout"></pre>
     </div>
 
+    <script src="qak.js"></script>
     <script>var require = { paths: { 'vs': 'vs' } };</script>
     <script src="vs/loader.js"></script>
     <script src="vs/editor/editor.main.nls.js"></script>
     <script src="vs/editor/editor.main.js"></script>
 
     <script>
+        var editor = null;
+        var lastModule = 0;
         var stdout = document.getElementById("stdout");
         var oldConsoleLog = console.log;
         console.log = (str) => {
@@ -57,17 +59,13 @@
             oldConsoleLog(str);
         }
 
-        var lastModule = 0;
         qak.init(() => {
             stdout.innerHTML = "";
-            createEditor();
+            editor.setValue("module test");
         });
 
-        // This is ridiculous, but it seems the Monaco editor interacts badly
-        // with loading WASM modules. Couldn't figure out a better way to load
-        // the Monaco editor after the WASM module.
         var createEditor = () => {
-            var editor = monaco.editor.create(document.getElementById("editor"), {
+            editor = monaco.editor.create(document.getElementById("editor"), {
                 value: "",
                 automaticLayout: true,
                 theme: "vs-dark",
@@ -93,9 +91,9 @@
                     }
                 }
             });
+        };
 
-            editor.setValue("module test");
-        }
+        createEditor();
     </script>
 </body>
 

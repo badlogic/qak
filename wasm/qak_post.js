@@ -4,9 +4,9 @@
 };
 
 qak.init = function(onReady) {
-    qak.Module = {};
-    qak.Module.onRuntimeInitialized = _ => {
-        const Module = qak.Module;
+
+    qak.wasmModule.onRuntimeInitialized = _ => {
+        const Module = qak.wasmModule;
         const qak_version = Module.cwrap("qak_version", "number", []);
         const qak_compiler_new = Module.cwrap("qak_compiler_new", "ptr", []);
         const qak_compiler_delete = Module.cwrap("qak_compiler_delete", "void", ["ptr"]);

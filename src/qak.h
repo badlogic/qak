@@ -7,9 +7,6 @@
 extern "C" {
 #endif
 
-#define QAK_TRUE 1
-#define QAK_FALSE 0
-
 typedef void *qak_compiler;
 typedef void *qak_module;
 
@@ -30,8 +27,6 @@ void qak_module_print_errors(qak_module module);
 void qak_module_print_tokens(qak_module module);
 
 void qak_module_print_ast(qak_module module);
-
-int qak_version();
 
 #ifdef __cplusplus
 }
