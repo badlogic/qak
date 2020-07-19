@@ -7,7 +7,6 @@ qak.init = function(onReady) {
 
     qak.wasmModule.onRuntimeInitialized = _ => {
         const Module = qak.wasmModule;
-        const qak_version = Module.cwrap("qak_version", "number", []);
         const qak_compiler_new = Module.cwrap("qak_compiler_new", "ptr", []);
         const qak_compiler_delete = Module.cwrap("qak_compiler_delete", "void", ["ptr"]);
         const qak_compiler_print_memory_usage = Module.cwrap("qak_compiler_print_memory_usage", "void", ["ptr"]);
