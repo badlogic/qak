@@ -9,19 +9,20 @@ using namespace qak::ast;
 void testBench() {
     Test test("Parser - Benchmark");
     HeapAllocator mem;
+    BumpAllocator bumpMem(mem);
 
     Source *source = io::readFile("data/parser_benchmark.qak", mem);
     QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_benchmark.qak");
 
     double start = io::timeMillis();
     Parser parser(mem);
-    Errors errors(mem);
+    Errors errors(mem, bumpMem);
 
     printf("Total allocations before benchmark: %zu\n", mem.totalAllocations());
 
     uint32_t iterations = 100000;
     for (uint32_t i = 0; i < iterations; i++) {
-        BumpAllocator moduleMem;
+        BumpAllocator moduleMem(mem);
         Module *module = parser.parse(*source, errors, &moduleMem);
 
         if (errors.hasErrors()) errors.print();
@@ -42,13 +43,14 @@ void testBench() {
 void testModule() {
     Test test("Parser - simple module");
     HeapAllocator mem;
+    BumpAllocator bumpMem(mem);
 
     Source *source = io::readFile("data/parser_module.qak", mem);
     QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_module.qak");
 
     Parser parser(mem);
-    Errors errors(mem);
-    BumpAllocator moduleMem;
+    BumpAllocator moduleMem(mem);
+    Errors errors(mem, moduleMem);
     Module *module = parser.parse(*source, errors, &moduleMem);
     QAK_CHECK(module, "Expected module, got nullptr.");
 }
@@ -61,8 +63,8 @@ void testExpression() {
         Source *source = io::readFile("data/parser_expression.qak", mem);
         QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_expression.qak");
         Parser parser(mem);
-        Errors errors(mem);
-        BumpAllocator moduleMem;
+        BumpAllocator moduleMem(mem);
+        Errors errors(mem, moduleMem);
         Module *module = parser.parse(*source, errors, &moduleMem);
         if (errors.hasErrors()) errors.print();
         QAK_CHECK(module, "Expected module, got nullptr.");
@@ -82,8 +84,8 @@ void testModuleVariable() {
     QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_module_var.qak");
 
     Parser parser(mem);
-    Errors errors(mem);
-    BumpAllocator moduleMem;
+    BumpAllocator moduleMem(mem);
+    Errors errors(mem, moduleMem);
     Module *module = parser.parse(*source, errors, &moduleMem);
     if (errors.hasErrors()) errors.print();
     QAK_CHECK(module, "Expected module, got nullptr.");
@@ -99,8 +101,8 @@ void testFunction() {
     QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_function.qak");
 
     Parser parser(mem);
-    Errors errors(mem);
-    BumpAllocator moduleMem;
+    BumpAllocator moduleMem(mem);
+    Errors errors(mem, moduleMem);
     Module *module = parser.parse(*source, errors, &moduleMem);
     if (errors.hasErrors()) errors.print();
     QAK_CHECK(module, "Expected module, got nullptr.");
@@ -117,8 +119,8 @@ void testV01() {
         QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_v_0_1.qak");
 
         Parser parser(mem);
-        Errors errors(mem);
-        BumpAllocator moduleMem;
+        BumpAllocator moduleMem(mem);
+        Errors errors(mem, moduleMem);
         Module *module = parser.parse(*source, errors, &moduleMem);
         if (errors.hasErrors()) errors.print();
         QAK_CHECK(module, "Expected module, got nullptr.");
@@ -144,8 +146,8 @@ void testError() {
     QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_function.qak");
 
     Parser parser(mem);
-    Errors errors(mem);
-    BumpAllocator moduleMem;
+    BumpAllocator moduleMem(mem);
+    Errors errors(mem, moduleMem);
     Module *module = parser.parse(*source, errors, &moduleMem);
     if (errors.hasErrors()) errors.print();
     QAK_CHECK(module, "Expected module, got nullptr.");

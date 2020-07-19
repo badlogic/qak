@@ -9,11 +9,12 @@ void testBench() {
     Test test("Tokenizer - Benchmark");
     double start = io::timeMillis();
     HeapAllocator mem;
+    BumpAllocator bumpMem(mem);
     Source *source = io::readFile("data/parser_benchmark.qak", mem);
     QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_benchmark.qak");
 
     Array<Token> tokens(mem);
-    Errors errors(mem);
+    Errors errors(mem, bumpMem);
     uint32_t iterations = 100000;
     for (uint32_t i = 0; i < iterations; i++) {
         tokens.clear();
@@ -30,11 +31,12 @@ void testBench() {
 void testTokenizer() {
     Test test("Tokenizer - all token types");
     HeapAllocator mem;
+    BumpAllocator bumpMem(mem);
     Source *source = io::readFile("data/tokens.qak", mem);
     QAK_CHECK(source != nullptr, "Couldn't read test file data/tokens.qak");
 
     Array<Token> tokens(mem);
-    Errors errors(mem);
+    Errors errors(mem, bumpMem);
 
     tokenizer::tokenize(*source, tokens, errors);
 
@@ -51,11 +53,12 @@ void testTokenizer() {
 void testError() {
     Test test("Tokenizer - unknown token");
     HeapAllocator mem;
+    BumpAllocator bumpMem(mem);
     Source *source = io::readFile("data/tokens_error.qak", mem);
     QAK_CHECK(source != nullptr, "Couldn't read test file data/tokens_error.qak");
 
     Array<Token> tokens(mem);
-    Errors errors(mem);
+    Errors errors(mem, bumpMem);
 
     tokenizer::tokenize(*source, tokens, errors);
     QAK_CHECK(errors.getErrors().size() == 1, "Expected 1 error, got %zu", errors.getErrors().size());
@@ -81,9 +84,9 @@ void generateLiteralToTokenArray() {
     }
 
     printf("static const uint32_t literalToTokenType[] = {\n");
-    for (int i = 0; i < types.size(); i++) {
+    for (int i = 0; i < (int)types.size(); i++) {
         printf("\t%d", types[i]);
-        if (i < types.size() - 1)
+        if (i < (int)types.size() - 1)
             if (types[i] != qak::Unknown)
                 printf(", // %s\n", tokenizer::tokenTypeToString(types[i]));
             else

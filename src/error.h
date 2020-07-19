@@ -20,10 +20,10 @@ namespace qak {
     };
 
     struct Errors {
-        HeapAllocator &mem;
+        BumpAllocator &bumpMem;
         Array <Error> errors;
 
-        Errors(HeapAllocator &mem) : mem(mem), errors(mem) {}
+        Errors(HeapAllocator &mem, BumpAllocator &bumpMem) : bumpMem(bumpMem), errors(mem) {}
 
         void add(Error error);
 

@@ -10,6 +10,7 @@ qak.init = function(onReady) {
         const qak_version = Module.cwrap("qak_version", "number", []);
         const qak_compiler_new = Module.cwrap("qak_compiler_new", "ptr", []);
         const qak_compiler_delete = Module.cwrap("qak_compiler_delete", "void", ["ptr"]);
+        const qak_compiler_print_memory_usage = Module.cwrap("qak_compiler_print_memory_usage", "void", ["ptr"]);
         const qak_compile_source = Module.cwrap("qak_compile_source", "ptr", ["ptr", "ptr", "ptr"]);
         const qak_module_delete = Module.cwrap("qak_module_delete", "void", ["ptr"]);
         const qak_module_has_errors = Module.cwrap("qak_module_has_errors", "number", ["ptr"]);
@@ -18,6 +19,10 @@ qak.init = function(onReady) {
         const qak_module_print_ast = Module.cwrap("qak_module_print_ast", "void", ["ptr"]);
 
         qak.compiler = qak_compiler_new();
+
+        qak.printMemoryUsage = () => {
+            qak_compiler_print_memory_usage(qak.compiler);
+        }
 
         qak.compileSource = (sourceName, sourceData) => {
             var name = Module.allocateUTF8(sourceName);

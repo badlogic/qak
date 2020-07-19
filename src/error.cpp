@@ -35,14 +35,10 @@ void Errors::add(Error error) {
 void Errors::add(Span span, const char *msg...) {
     va_list args;
     va_start(args, msg);
-
-    char *buffer = mem.alloc<char>(1024, QAK_SRC_LOC);
-    int len = vsnprintf(buffer, 1024, msg, args);
-    if (len > 1024) {
-        mem.free(buffer, QAK_SRC_LOC);
-        buffer = mem.alloc<char>(len + 1, QAK_SRC_LOC);
-        vsnprintf(buffer, len + 1, msg, args);
-    }
+    char scratch[1];
+    int len = vsnprintf(scratch, 1, msg, args);
+    char *buffer = bumpMem.alloc<char>(len + 1);
+    vsnprintf(buffer, len + 1, msg, args);
     va_end(args);
     add({span, buffer});
 }

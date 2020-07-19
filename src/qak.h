@@ -14,6 +14,8 @@ qak_compiler qak_compiler_new();
 
 void qak_compiler_delete(qak_compiler compiler);
 
+void qak_compiler_print_memory_usage(qak_compiler compile);
+
 qak_module qak_compile_file(qak_compiler compiler, const char *fileName);
 
 qak_module qak_compile_source(qak_compiler compiler, const char *fileName, const char *source);

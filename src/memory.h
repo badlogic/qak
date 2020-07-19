@@ -159,13 +159,14 @@ namespace qak {
     };
 
     struct BumpAllocator {
+        HeapAllocator &mem;
         Block *head;
         size_t blockSize;
 
-        BumpAllocator() : head(nullptr), blockSize(QAK_BLOCK_SIZE) {
+        BumpAllocator(HeapAllocator &mem) : mem(mem), head(nullptr), blockSize(QAK_BLOCK_SIZE) {
         }
 
-        BumpAllocator(size_t blockSize) : head(nullptr), blockSize(blockSize) {
+        BumpAllocator(HeapAllocator &mem, size_t blockSize) : mem(mem), head(nullptr), blockSize(blockSize) {
         };
 
         BumpAllocator(BumpAllocator const &) = delete;
@@ -186,7 +187,7 @@ namespace qak {
             if (size == 0) return nullptr;
 
             if (head == nullptr || !head->canStore(size)) {
-                Block *newHead = new Block(blockSize < size ? size * 2 : blockSize);
+                Block *newHead = mem.allocObject<Block>(QAK_SRC_LOC, blockSize < size ? size * 2 : blockSize);
                 newHead->next = head;
                 head = newHead;
             }
@@ -198,7 +199,7 @@ namespace qak {
             while (head) {
                 Block *block = head;
                 head = block->next;
-                delete block;
+                mem.freeObject<Block>(block, QAK_SRC_LOC);
             }
         }
     };

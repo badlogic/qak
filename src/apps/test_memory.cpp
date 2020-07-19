@@ -6,7 +6,8 @@ using namespace qak;
 
 int main() {
     Test test("Bump allocator");
-    BumpAllocator allocator(16);
+    HeapAllocator mem;
+    BumpAllocator allocator(mem, 16);
 
     uint8_t *fourBytes = allocator.alloc<uint8_t>(4);
     QAK_CHECK(fourBytes != nullptr, "Expected allocated memory.");
