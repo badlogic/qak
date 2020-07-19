@@ -147,6 +147,8 @@ Statement *Parser::parseStatement() {
         return parseWhile();
     } else if (_stream->match(QAK_STR("if"), false)) {
         return parseIf();
+    } else if (_stream->match(QAK_STR("return"), false)) {
+        return parseReturn();
     } else {
         return parseExpression();
     }
@@ -227,6 +229,18 @@ If *Parser::parseIf() {
 
     If *ifStmt = _bumpMem->allocObject<If>(*_bumpMem, *ifToken, *endToken, condition, *trueBlock, *falseBlock);
     return ifStmt;
+}
+
+Return *Parser::parseReturn() {
+    Token *returnToken = _stream->expect(QAK_STR("return"));
+
+    if (_stream->match(QAK_STR(";"), true)) {
+        return _bumpMem->allocObject<Return>(*returnToken, *returnToken, nullptr);
+    } else {
+        Expression *returnValue = parseExpression();
+        if (!returnValue) return nullptr;
+        return _bumpMem->allocObject<Return>(*returnToken, returnValue->span, returnValue);
+    }
 }
 
 TypeSpecifier *Parser::parseTypeSpecifier() {

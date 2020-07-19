@@ -228,6 +228,8 @@ namespace qak {
 
         ast::If *parseIf();
 
+        ast::Return *parseReturn();
+
         ast::TypeSpecifier *parseTypeSpecifier();
 
         ast::Expression *parseExpression();
