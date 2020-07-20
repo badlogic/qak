@@ -67,13 +67,13 @@ struct Module {
             astNodes = mem.allocObject<Array<qak_ast_node>>(QAK_SRC_LOC, mem);
             return linearizeAst(*astNodes, astModule);
         } else {
-            return astNodes->size() - 1;
+            return ((qak_ast_node_index)astNodes->size()) - 1;
         }
     }
 
     template<typename T>
     void fixedAstNodeArrayToQakAstNodeList(Array<qak_ast_node> &nodes, FixedArray<T *> &array, qak_ast_node_list &list) {
-        list.numNodes = array.size();
+        list.numNodes = (qak_ast_node_index)array.size();
         if (list.numNodes > 0) {
             list.nodes = bumpMem->alloc<qak_ast_node_index>(list.numNodes);
             for (size_t i = 0; i < list.numNodes; i++) {
@@ -182,7 +182,7 @@ struct Module {
         }
 
         nodes.add(astNode);
-        return nodes.size() - 1;
+        return ((qak_ast_node_index)nodes.size()) - 1;
     }
 };
 
