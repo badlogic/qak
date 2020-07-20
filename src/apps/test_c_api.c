@@ -9,7 +9,7 @@ static void printIndent(int indent) {
 }
 
 static void printSpan(const char *label, qak_span *span) {
-    printf("%s%.*s\n", label, span->data.length, span->data.data);
+    printf("%s%.*s\n", label, (int)span->data.length, span->data.data);
 }
 
 static void printAstNodeRecursive(qak_module module, qak_ast_node *node, int indent) {
@@ -132,7 +132,7 @@ static void printAstNodeRecursive(qak_module module, qak_ast_node *node, int ind
         }
         case QakAstUnaryOperation: {
             printIndent(indent);
-            printf("Unary op: %s\n", &node->data.unaryOperation.op);
+            printSpan("Unary op: ", &node->data.unaryOperation.op);
             printAstNodeRecursive(module, qak_module_get_ast_node(module, node->data.unaryOperation.value), indent + INDENT);
             break;
         }
@@ -189,20 +189,20 @@ int main() {
     qak_ast_module *astModule = qak_module_get_ast(module);
     QAK_CHECK(astModule, "Couldn't get module AST");
 
-    printf("Module: %.*s\n", astModule->name.data.length, astModule->name.data.data);
+    printSpan("Module: ", &astModule->name);
 
     printf("Functions: %i\n", astModule->functions.numNodes);
-    for (int i = 0; i < astModule->functions.numNodes; i++) {
+    for (size_t i = 0; i < astModule->functions.numNodes; i++) {
         printAstNodeRecursive(module, qak_module_get_ast_node(module, astModule->functions.nodes[i]), 1);
     }
 
     printf("Variables: %i\n", astModule->variables.numNodes);
-    for (int i = 0; i < astModule->variables.numNodes; i++) {
+    for (size_t i = 0; i < astModule->variables.numNodes; i++) {
         printAstNodeRecursive(module, qak_module_get_ast_node(module, astModule->variables.nodes[i]), 1);
     }
 
     printf("Statements: %i\n", astModule->statements.numNodes);
-    for (int i = 0; i < astModule->statements.numNodes; i++) {
+    for (size_t i = 0; i < astModule->statements.numNodes; i++) {
         printAstNodeRecursive(module, qak_module_get_ast_node(module, astModule->statements.nodes[i]), 1);
     }
 

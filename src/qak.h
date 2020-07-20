@@ -192,7 +192,7 @@ typedef struct qak_ast_module {
 typedef struct qak_ast_node {
     qak_ast_type type;
     qak_span span;
-    union data {
+    union {
         qak_ast_type_specifier typeSpecifier;
         qak_ast_parameter parameter;
         qak_ast_function function;
