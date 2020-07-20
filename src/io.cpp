@@ -10,10 +10,9 @@
 using namespace qak;
 
 
-
 Source *io::readFile(const char *fileName, HeapAllocator &mem) {
     FILE *file = fopen(fileName, "rb");
-    if (file == nullptr) {        
+    if (file == nullptr) {
         return nullptr;
     }
 
@@ -27,7 +26,7 @@ Source *io::readFile(const char *fileName, HeapAllocator &mem) {
     fclose(file);
 
     size_t fileNameLength = strlen(fileName);
-    char* fileNameCopy = mem.alloc<char>(fileNameLength, QAK_SRC_LOC);
+    char *fileNameCopy = mem.alloc<char>(fileNameLength, QAK_SRC_LOC);
     memcpy(fileNameCopy, fileName, fileNameLength);
     return mem.allocObject<Source>(QAK_SRC_LOC, mem, fileNameCopy, data, size);
 }

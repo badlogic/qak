@@ -52,12 +52,16 @@
 
     <script>
             var editor = null;
-            var lastModule = 0;
+            var module = 0;
             var stdout = document.getElementById("stdout");
             var oldConsoleLog = console.log;
             console.log = (str) => {
                 stdout.innerHTML += str + "<br>"
                 oldConsoleLog(str);
+            }
+
+            var log = (str) => {
+                stdout.innerHTML += str + "\n";
             }
 
             qak.init(() => {
@@ -72,22 +76,32 @@
             });
 
             editor.onDidChangeModelContent((e) => {
-                if (lastModule != 0) {
-                    qak.deleteModule(lastModule);
-                    lastModule = 0;
+                if (module != 0) {
+                    qak.deleteModule(module);
+                    module = 0;
                 }
                 stdout.innerHTML = "";
-                lastModule = qak.compileSource("source", editor.getValue());
-                if (lastModule == 0) {
-                    console.log("Error compiling source.");
+                module = qak.compileSource("source", editor.getValue());
+                if (module == 0) {
+                    log("Error compiling source.");
                 } else {
-                    if (qak.hasErrors(lastModule)) {
-                        qak.printErrors(lastModule);
+                    if (qak.hasErrors(module)) {
+                        var errors = qak.getErrors(module);
+                        var source = qak.getSource(module);
+                        for (var i = 0; i < errors.length; i++) {
+                            var error = errors[i];
+                            log("Error (" + source.fileName + ":" + error.span.startLine + "): " + error.errorMessage);
+                        }
                     } else {
-                        console.log("=== Tokens:")
-                        qak.printTokens(lastModule);
-                        console.log("\n=== AST")
-                        qak.printAst(lastModule);
+                        log("=== Tokens:")
+                        var tokens = qak.getTokens(module);
+                        log("#tokens: " + qak.getTokens(module).length);
+                        for (var i = 0; i < tokens.length; i++) {
+                            var token = tokens[i];
+                            log(token.type + " (" + token.span.startLine + ":" + token.span.start + ":" + token.span.end + "): " + token.span.data);
+                        }
+                        log("\n=== AST")
+                        qak.printAst(module);
                     }
                 }
                 console.log("\n=== Memory");

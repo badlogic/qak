@@ -21,7 +21,7 @@ namespace qak {
 
     struct Errors {
         BumpAllocator &bumpMem;
-        Array <Error> errors;
+        Array<Error> errors;
 
         Errors(HeapAllocator &mem, BumpAllocator &bumpMem) : bumpMem(bumpMem), errors(mem) {}
 
@@ -31,7 +31,7 @@ namespace qak {
 
         void addAll(Errors &errors);
 
-        Array <Error> &getErrors();
+        Array<Error> &getErrors();
 
         bool hasErrors();
 

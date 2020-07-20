@@ -309,7 +309,7 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
         uint32_t character = stream.consume();
         TokenType type = Unknown;
         if (character < sizeof(literalToTokenType)) {
-            type = (TokenType)literalToTokenType[character];
+            type = (TokenType) literalToTokenType[character];
             if (type == Unknown) QAK_ERROR(stream.endSpan(), "Unknown token");
             if (!stream.hasMore()) {
                 tokens.add({(TokenType) type, stream.endSpan()});
@@ -332,8 +332,7 @@ void tokenizer::tokenize(Source &source, Array<Token> &tokens, Errors &errors) {
                     case Assignment:
                         tokens.add({(TokenType) Equal, stream.endSpan()});
                         break;
-                    default:
-                        QAK_ERROR(stream.endSpan(), "Found unknown two character token");
+                    default: QAK_ERROR(stream.endSpan(), "Found unknown two character token");
                 }
             } else {
                 tokens.add({(TokenType) type, stream.endSpan()});

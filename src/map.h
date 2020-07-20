@@ -85,14 +85,14 @@ namespace qak {
         }
 
         void put(const K &key, const V &value) {
-            size_t hash = (size_t)(_hashFunc(key) % _entries.size());
+            size_t hash = (size_t) (_hashFunc(key) % _entries.size());
             MapEntry<K, V> *entry = _entries[hash];
             _size++;
 
             // No entries for that hash, add a new entry
             if (entry == nullptr) {
                 entry = new(_mem.alloc<MapEntry<K, V>>(1, QAK_SRC_LOC)) MapEntry<K, V>(key, value);
-                _entries[(size_t)hash] = entry;
+                _entries[(size_t) hash] = entry;
                 return;
             }
 
@@ -113,7 +113,7 @@ namespace qak {
         }
 
         MapEntry<K, V> *get(const K &key) {
-            size_t hash = (size_t)(_hashFunc(key) % _entries.size());
+            size_t hash = (size_t) (_hashFunc(key) % _entries.size());
             MapEntry<K, V> *entry = _entries[hash];
             while (entry != nullptr) {
                 if (_equalsFunc(key, entry->key)) break;
@@ -123,7 +123,7 @@ namespace qak {
         }
 
         void remove(const K &key) {
-            size_t hash = (size_t)(_hashFunc(key) % _entries.size());
+            size_t hash = (size_t) (_hashFunc(key) % _entries.size());
             MapEntry<K, V> *prevEntry = nullptr;
             MapEntry<K, V> *entry = _entries[hash];
             while (entry != nullptr) {

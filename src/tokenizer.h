@@ -64,7 +64,7 @@ namespace qak {
 
     public:
 
-        CharacterStream(Source &source) : _source(source), _index(0), _line(1), _end((uint32_t)source.size), _spanStart(0), _spanLineStart(1) {
+        CharacterStream(Source &source) : _source(source), _index(0), _line(1), _end((uint32_t) source.size), _spanStart(0), _spanLineStart(1) {
         }
 
         /* Returns whether the stream has more UTF-8 characters */
@@ -352,7 +352,7 @@ namespace qak {
                 Token *token = (uint64_t) _index < _tokens.size() ? &_tokens[_index] : nullptr;
                 if (token == nullptr) {
                     Span errorSpan(_source, (uint32_t) _source.size - 1, (uint32_t) _source.lines().size() - 1, (uint32_t) _source.size - 1,
-                                       (uint32_t) _source.lines().size() - 1);
+                                   (uint32_t) _source.lines().size() - 1);
                     _errors.add(errorSpan, "Expected '%s', but reached the end of the source.", text);
                 } else {
                     HeapAllocator mem;
