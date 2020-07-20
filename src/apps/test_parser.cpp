@@ -138,12 +138,12 @@ void testV01() {
     QAK_CHECK(mem.numAllocations() == 0, "Expected all memory to be deallocated, but %zu allocations remaining.", mem.numAllocations());
 }
 
-void testError() {
-    Test test("Parser - function");
+void testEOL() {
+    Test test("Parser - EOL");
     HeapAllocator mem;
 
-    Source *source = Source::fromMemory(mem, "source", "module test while");
-    QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_function.qak");
+    Source *source = io::readFile("data/parser_eol.qak", mem);
+    QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_eol.qak");
 
     Parser parser(mem);
     BumpAllocator moduleMem(mem);
@@ -156,7 +156,7 @@ void testError() {
 }
 
 int main() {
-    testError();
+    testEOL();
 
     testModule();
     testExpression();

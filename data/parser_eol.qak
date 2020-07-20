@@ -1,0 +1,7 @@
+module test
+
+fun foo(a: int32, b: int32)
+    return a + b
+end
+
+foo(1, 2

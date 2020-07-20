@@ -25,7 +25,7 @@ Source *io::readFile(const char *fileName, HeapAllocator &mem) {
     fread(data, sizeof(uint8_t), size, file);
     fclose(file);
 
-    size_t fileNameLength = strlen(fileName);
+    size_t fileNameLength = strlen(fileName) + 1;
     char *fileNameCopy = mem.alloc<char>(fileNameLength, QAK_SRC_LOC);
     memcpy(fileNameCopy, fileName, fileNameLength);
     return mem.allocObject<Source>(QAK_SRC_LOC, mem, fileNameCopy, data, size);

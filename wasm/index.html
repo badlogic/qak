@@ -86,8 +86,8 @@
                     log("Error compiling source.");
                 } else {
                     if (qak.hasErrors(module)) {
-                        var errors = qak.getErrors(module);
                         var source = qak.getSource(module);
+                        var errors = qak.getErrors(module);
                         for (var i = 0; i < errors.length; i++) {
                             var error = errors[i];
                             log("Error (" + source.fileName + ":" + error.span.startLine + "): " + error.errorMessage);

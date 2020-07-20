@@ -400,6 +400,11 @@ Array<ast::Expression *> *Parser::parseArguments(Array<Expression *> *arguments)
         arguments->add(argument);
 
         if (!_stream->match(QAK_STR(")"), false)) {
+            if (!_stream->hasMore()) {
+                Token token = _stream->getTokens()[_stream->getTokens().size() - 1];
+                _errors->add(token, "Expected ) or , but reached end of file.");
+                return nullptr;
+            }
             if (!_stream->expect(QAK_STR(","))) return nullptr;
         }
     }

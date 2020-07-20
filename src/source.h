@@ -98,11 +98,11 @@ namespace qak {
         /* Creates a new Source with the given file name and source code. The name and
          * source code are copied defensively.*/
         static Source *fromMemory(HeapAllocator &mem, const char *fileName, const char *sourceCode) {
-            size_t dataLength = strlen(sourceCode);
+            size_t dataLength = strlen(sourceCode) + 1;
             uint8_t *data = mem.alloc<uint8_t>(dataLength, QAK_SRC_LOC);
             memcpy(data, sourceCode, dataLength);
 
-            size_t fileNameLength = strlen(fileName);
+            size_t fileNameLength = strlen(fileName) + 1;
             char *fileNameCopy = mem.alloc<char>(fileNameLength, QAK_SRC_LOC);
             memcpy(fileNameCopy, fileName, fileNameLength);
             Source *source = mem.allocObject<Source>(QAK_SRC_LOC, mem, fileNameCopy, data, dataLength);
