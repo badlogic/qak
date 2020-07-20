@@ -8,13 +8,9 @@
 extern "C" {
 #endif
 
-typedef struct qak_compiler {
-    size_t _unused;
-} qak_compiler;
+typedef void *qak_compiler;
 
-typedef struct qak_module {
-    size_t _unused;
-} qak_module;
+typedef void *qak_module;
 
 /** A UTF-8 string from a Source with length bytes. **/
 typedef struct qak_string {
@@ -100,34 +96,34 @@ typedef struct qak_error {
 } qak_error;
 
 /** Compiler **/
-qak_compiler *qak_compiler_new();
+qak_compiler qak_compiler_new();
 
-void qak_compiler_delete(qak_compiler *compiler);
+void qak_compiler_delete(qak_compiler compiler);
 
-void qak_compiler_print_memory_usage(qak_compiler *compile);
+void qak_compiler_print_memory_usage(qak_compiler compile);
 
-qak_module *qak_compiler_compile_file(qak_compiler *compiler, const char *fileName);
+qak_module qak_compiler_compile_file(qak_compiler compiler, const char *fileName);
 
-qak_module *qak_compiler_compile_source(qak_compiler *compiler, const char *fileName, const char *source);
+qak_module qak_compiler_compile_source(qak_compiler compiler, const char *fileName, const char *source);
 
 /** Module **/
-void qak_module_delete(qak_module *module);
+void qak_module_delete(qak_module module);
 
-void qak_module_get_source(qak_module *module, qak_source *source);
+void qak_module_get_source(qak_module module, qak_source *source);
 
-int qak_module_get_num_errors(qak_module *module);
+int qak_module_get_num_errors(qak_module module);
 
-void qak_module_get_error(qak_module *moduleHandle, int errorIndex, qak_error *error);
+void qak_module_get_error(qak_module moduleHandle, int errorIndex, qak_error *error);
 
-int qak_module_get_num_tokens(qak_module *module);
+int qak_module_get_num_tokens(qak_module module);
 
-void qak_module_get_token(qak_module *moduleHandle, int tokenIndex, qak_token *token);
+void qak_module_get_token(qak_module moduleHandle, int tokenIndex, qak_token *token);
 
-void qak_module_print_errors(qak_module *module);
+void qak_module_print_errors(qak_module module);
 
-void qak_module_print_tokens(qak_module *module);
+void qak_module_print_tokens(qak_module module);
 
-void qak_module_print_ast(qak_module *module);
+void qak_module_print_ast(qak_module module);
 
 #ifdef WASM
 void qak_print_struct_offsets();

@@ -50,13 +50,13 @@ struct Module {
     }
 };
 
-EMSCRIPTEN_KEEPALIVE qak_compiler *qak_compiler_new() {
+EMSCRIPTEN_KEEPALIVE qak_compiler qak_compiler_new() {
     HeapAllocator *mem = new HeapAllocator();
     Compiler *compiler = mem->allocObject<Compiler>(QAK_SRC_LOC, mem);
-    return (qak_compiler *) compiler;
+    return (qak_compiler) compiler;
 }
 
-EMSCRIPTEN_KEEPALIVE void qak_compiler_delete(qak_compiler *compilerHandle) {
+EMSCRIPTEN_KEEPALIVE void qak_compiler_delete(qak_compiler compilerHandle) {
     Compiler *compiler = (Compiler *) compilerHandle;
     HeapAllocator *mem = compiler->mem;
     mem->freeObject(compiler, QAK_SRC_LOC);
@@ -64,38 +64,38 @@ EMSCRIPTEN_KEEPALIVE void qak_compiler_delete(qak_compiler *compilerHandle) {
     delete mem;
 }
 
-EMSCRIPTEN_KEEPALIVE void qak_compiler_print_memory_usage(qak_compiler *compilerHandle) {
+EMSCRIPTEN_KEEPALIVE void qak_compiler_print_memory_usage(qak_compiler compilerHandle) {
     Compiler *compiler = (Compiler *) compilerHandle;
     compiler->mem->printAllocations();
 }
 
-qak_module *qak_compile(Compiler *compiler, Source *source) {
+qak_module qak_compile(Compiler *compiler, Source *source) {
     BumpAllocator *bumpMem = compiler->mem->allocObject<BumpAllocator>(QAK_SRC_LOC, *compiler->mem);
     Array<Token> tokens(*compiler->mem);
     Errors errors(*compiler->mem, *bumpMem);
 
     qak::tokenizer::tokenize(*source, tokens, errors);
     if (errors.hasErrors()) {
-        return (qak_module *) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens, nullptr, errors);;
+        return (qak_module) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens, nullptr, errors);;
     }
 
     qak::Parser parser(*compiler->mem);
     ast::Module *astModule = parser.parse(*source, errors, bumpMem);
     if (astModule == nullptr) {
-        return (qak_module *) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens, nullptr, errors);;
+        return (qak_module) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens, nullptr, errors);;
     }
 
-    return (qak_module *) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens, astModule, errors);
+    return (qak_module) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens, astModule, errors);
 }
 
-EMSCRIPTEN_KEEPALIVE qak_module *qak_compiler_compile_file(qak_compiler *compilerHandle, const char *fileName) {
+EMSCRIPTEN_KEEPALIVE qak_module qak_compiler_compile_file(qak_compiler compilerHandle, const char *fileName) {
     Compiler *compiler = (Compiler *) compilerHandle;
     Source *source = io::readFile(fileName, *compiler->mem);
     if (source == nullptr) return nullptr;
     return qak_compile(compiler, source);
 }
 
-EMSCRIPTEN_KEEPALIVE qak_module *qak_compiler_compile_source(qak_compiler *compilerHandle, const char *fileName, const char *sourceData) {
+EMSCRIPTEN_KEEPALIVE qak_module qak_compiler_compile_source(qak_compiler compilerHandle, const char *fileName, const char *sourceData) {
     Compiler *compiler = (Compiler *) compilerHandle;
     HeapAllocator &mem = *compiler->mem;
 
@@ -105,13 +105,13 @@ EMSCRIPTEN_KEEPALIVE qak_module *qak_compiler_compile_source(qak_compiler *compi
     return qak_compile(compiler, source);
 }
 
-EMSCRIPTEN_KEEPALIVE void qak_module_delete(qak_module *moduleHandle) {
+EMSCRIPTEN_KEEPALIVE void qak_module_delete(qak_module moduleHandle) {
     Module *module = (Module *) moduleHandle;
     HeapAllocator &mem = module->mem;
     mem.freeObject(module, QAK_SRC_LOC);
 }
 
-EMSCRIPTEN_KEEPALIVE void qak_module_get_source(qak_module *moduleHandle, qak_source *source) {
+EMSCRIPTEN_KEEPALIVE void qak_module_get_source(qak_module moduleHandle, qak_source *source) {
     Module *module = (Module *) moduleHandle;
     source->fileName.data = module->source->fileName;
     source->fileName.length = strlen(module->source->fileName);
@@ -119,12 +119,12 @@ EMSCRIPTEN_KEEPALIVE void qak_module_get_source(qak_module *moduleHandle, qak_so
     source->data.length = module->source->size;
 }
 
-EMSCRIPTEN_KEEPALIVE int qak_module_get_num_errors(qak_module *moduleHandle) {
+EMSCRIPTEN_KEEPALIVE int qak_module_get_num_errors(qak_module moduleHandle) {
     Module *module = (Module *) moduleHandle;
     return (int) module->errors.getErrors().size();
 }
 
-EMSCRIPTEN_KEEPALIVE void qak_module_get_error(qak_module *moduleHandle, int errorIndex, qak_error *errorResult) {
+EMSCRIPTEN_KEEPALIVE void qak_module_get_error(qak_module moduleHandle, int errorIndex, qak_error *errorResult) {
     Module *module = (Module *) moduleHandle;
     Error &error = module->errors.getErrors()[errorIndex];
     Span &span = error.span;
@@ -139,12 +139,12 @@ EMSCRIPTEN_KEEPALIVE void qak_module_get_error(qak_module *moduleHandle, int err
     errorResult->span.endLine = span.endLine;
 }
 
-EMSCRIPTEN_KEEPALIVE int qak_module_get_num_tokens(qak_module *moduleHandle) {
+EMSCRIPTEN_KEEPALIVE int qak_module_get_num_tokens(qak_module moduleHandle) {
     Module *module = (Module *) moduleHandle;
     return (int) module->tokens.size();
 }
 
-EMSCRIPTEN_KEEPALIVE void qak_module_get_token(qak_module *moduleHandle, int tokenIndex, qak_token *tokenResult) {
+EMSCRIPTEN_KEEPALIVE void qak_module_get_token(qak_module moduleHandle, int tokenIndex, qak_token *tokenResult) {
     Module *module = (Module *) moduleHandle;
     Token &token = module->tokens[tokenIndex];
     Source &source = token.source;
@@ -158,18 +158,18 @@ EMSCRIPTEN_KEEPALIVE void qak_module_get_token(qak_module *moduleHandle, int tok
     tokenResult->span.endLine = token.endLine;
 }
 
-EMSCRIPTEN_KEEPALIVE void qak_module_print_errors(qak_module *moduleHandle) {
+EMSCRIPTEN_KEEPALIVE void qak_module_print_errors(qak_module moduleHandle) {
     Module *module = (Module *) moduleHandle;
     module->errors.print();
 }
 
-EMSCRIPTEN_KEEPALIVE void qak_module_print_tokens(qak_module *moduleHandle) {
+EMSCRIPTEN_KEEPALIVE void qak_module_print_tokens(qak_module moduleHandle) {
     Module *module = (Module *) moduleHandle;
     HeapAllocator mem;
     tokenizer::printTokens(module->tokens, mem);
 }
 
-EMSCRIPTEN_KEEPALIVE void qak_module_print_ast(qak_module *moduleHandle) {
+EMSCRIPTEN_KEEPALIVE void qak_module_print_ast(qak_module moduleHandle) {
     Module *module = (Module *) moduleHandle;
     if (module->astModule) {
         HeapAllocator mem;
