@@ -79,13 +79,13 @@ namespace qak {
         struct Variable : public Statement {
             Span name;
             TypeSpecifier *typeSpecifier;
-            Expression *expression;
+            Expression *initializerExpression;
 
             Variable(Span name, TypeSpecifier *type, Expression *expression) :
                     Statement(AstVariable, name, name),
                     name(name),
                     typeSpecifier(type),
-                    expression(expression) {}
+                    initializerExpression(expression) {}
         };
 
         struct While : public Statement {
@@ -144,11 +144,11 @@ namespace qak {
 
         struct UnaryOperation : public Expression {
             Span op;
-            Expression *expression;
+            Expression *value;
 
-            UnaryOperation(Span op, Expression *expression) :
+            UnaryOperation(Span op, Expression *value) :
                     Expression(AstUnaryOperation, op, op),
-                    op(op), expression(expression) {}
+                    op(op), value(value) {}
         };
 
         struct Literal : public Expression {

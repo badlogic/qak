@@ -76,7 +76,7 @@ void generateLiteralToTokenArray() {
     while (type != qak::Unknown) {
         const char *literal = tokenizer::tokenTypeToString((qak::TokenType) type);
         if (strlen(literal) == 1) {
-            types.buffer()[(size_t)literal[0]] = (qak::TokenType)type;
+            types.buffer()[(size_t) literal[0]] = (qak::TokenType) type;
         } else {
             printf("Non single-character literal: %s\n", literal);
         }
@@ -84,9 +84,9 @@ void generateLiteralToTokenArray() {
     }
 
     printf("static const uint32_t literalToTokenType[] = {\n");
-    for (int i = 0; i < (int)types.size(); i++) {
+    for (int i = 0; i < (int) types.size(); i++) {
         printf("\t%d", types[i]);
-        if (i < (int)types.size() - 1)
+        if (i < (int) types.size() - 1)
             if (types[i] != qak::Unknown)
                 printf(", // %s\n", tokenizer::tokenTypeToString(types[i]));
             else

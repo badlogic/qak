@@ -465,10 +465,10 @@ static void printAstNodeRecursive(ast::AstNode *node, int indent, HeapAllocator 
             printIndent(indent);
             printf("Variable: %s\n", n->name.toCString(mem));
             if (n->typeSpecifier) printAstNodeRecursive(n->typeSpecifier, indent + QAK_AST_INDENT, mem);
-            if (n->expression) {
+            if (n->initializerExpression) {
                 printIndent(indent + QAK_AST_INDENT);
                 printf("Initializer: \n");
-                printAstNodeRecursive(n->expression, indent + QAK_AST_INDENT * 2, mem);
+                printAstNodeRecursive(n->initializerExpression, indent + QAK_AST_INDENT * 2, mem);
             }
             break;
         }
@@ -550,7 +550,7 @@ static void printAstNodeRecursive(ast::AstNode *node, int indent, HeapAllocator 
             UnaryOperation *n = (UnaryOperation *) node;
             printIndent(indent);
             printf("Unary op: %s\n", n->op.toCString(mem));
-            printAstNodeRecursive(n->expression, indent + QAK_AST_INDENT, mem);
+            printAstNodeRecursive(n->value, indent + QAK_AST_INDENT, mem);
             break;
         }
         case AstLiteral: {
