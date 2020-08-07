@@ -8,6 +8,23 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#  pragma warning(disable : 4127)      /* disable: C4127: conditional expression is constant */
+#  define QAK_FORCE_INLINE __forceinline
+#else
+#  if defined (__cplusplus) || defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   /* C99 */
+#    ifdef __GNUC__
+#      define QAK_FORCE_INLINE inline __attribute__((always_inline))
+#    else
+#      define QAK_FORCE_INLINE inline
+#    endif
+#  else
+#    define QAK_FORCE_INLINE
+#  endif /* __STDC_VERSION__ */
+#endif
+
+#define QAK_SRC_LOC __FILE__, __LINE__
+
 typedef void *qak_compiler;
 
 typedef void *qak_module;
@@ -39,8 +56,6 @@ typedef struct qak_line {
 } qak_line;
 
 typedef enum qak_token_type {
-    // Simple tokens, sorted by literal length. Longer literals first.
-    // The list of simple tokens is terminated via LastSimpleTokenType.
     QakTokenPeriod,
     QakTokenComma,
     QakTokenSemicolon,
@@ -71,7 +86,6 @@ typedef enum qak_token_type {
     QakTokenQuestionMark,
     QakTokenUnknown,
 
-    // These don't have a literal representation
     QakTokenBooleanLiteral,
     QakTokenDoubleLiteral,
     QakTokenFloatLiteral,

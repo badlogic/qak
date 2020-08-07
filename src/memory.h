@@ -1,7 +1,7 @@
 #ifndef QAK_MEMORY_H
 #define QAK_MEMORY_H
 
-#include "types.h"
+#include "qak.h"
 #include <map>
 #include <string.h>
 #include <cstdio>
