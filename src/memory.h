@@ -1,10 +1,26 @@
 #ifndef QAK_MEMORY_H
 #define QAK_MEMORY_H
 
-#include "qak.h"
 #include <map>
 #include <string.h>
 #include <cstdio>
+
+#ifdef _MSC_VER
+#  pragma warning(disable : 4127)      /* disable: C4127: conditional expression is constant */
+#  define QAK_FORCE_INLINE __forceinline
+#else
+#  if defined (__cplusplus) || defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   /* C99 */
+#    ifdef __GNUC__
+#      define QAK_FORCE_INLINE inline __attribute__((always_inline))
+#    else
+#      define QAK_FORCE_INLINE inline
+#    endif
+#  else
+#    define QAK_FORCE_INLINE
+#  endif /* __STDC_VERSION__ */
+#endif
+
+#define QAK_SRC_LOC __FILE__, __LINE__
 
 // Default block size of the BumpAllocator
 #define QAK_BLOCK_SIZE (512 * 16)

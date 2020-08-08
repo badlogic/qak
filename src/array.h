@@ -3,6 +3,8 @@
 
 #include "memory.h"
 
+
+
 namespace qak {
 
     template<typename T>

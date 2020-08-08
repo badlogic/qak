@@ -1,4 +1,4 @@
-#include "qak.h"
+#include "c/qak.h"
 #include "io.h"
 #include "parser.h"
 
@@ -11,7 +11,7 @@
 using namespace qak;
 
 static void spanToQakSpan(Span &span, qak_span &qakSpan) {
-    qakSpan.data.data = (const char *) span.source.data + span.start;
+    qakSpan.data.data = span.source.data + span.start;
     qakSpan.data.length = span.end - span.start;
     qakSpan.start = span.start;
     qakSpan.end = span.end;
@@ -249,9 +249,9 @@ EMSCRIPTEN_KEEPALIVE void qak_module_delete(qak_module moduleHandle) {
 
 EMSCRIPTEN_KEEPALIVE void qak_module_get_source(qak_module moduleHandle, qak_source *source) {
     Module *module = (Module *) moduleHandle;
-    source->fileName.data = module->source->fileName;
+    source->fileName.data = (uint8_t *)module->source->fileName;
     source->fileName.length = strlen(module->source->fileName);
-    source->data.data = (const char *) module->source->data;
+    source->data.data = module->source->data;
     source->data.length = module->source->size;
 }
 
@@ -265,7 +265,7 @@ EMSCRIPTEN_KEEPALIVE void qak_module_get_error(qak_module moduleHandle, int erro
     Error &error = module->errors.getErrors()[errorIndex];
     Span &span = error.span;
 
-    errorResult->errorMessage.data = error.message;
+    errorResult->errorMessage.data = (uint8_t *)error.message;
     errorResult->errorMessage.length = strlen(error.message);
     spanToQakSpan(span, errorResult->span);
 }

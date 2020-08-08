@@ -1,29 +1,10 @@
-#ifndef QAK_C_API_H
-#define QAK_C_API_H
+#pragma once
 
-#include <stdint.h>
-#include <stddef.h>
+#include "types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifdef _MSC_VER
-#  pragma warning(disable : 4127)      /* disable: C4127: conditional expression is constant */
-#  define QAK_FORCE_INLINE __forceinline
-#else
-#  if defined (__cplusplus) || defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   /* C99 */
-#    ifdef __GNUC__
-#      define QAK_FORCE_INLINE inline __attribute__((always_inline))
-#    else
-#      define QAK_FORCE_INLINE inline
-#    endif
-#  else
-#    define QAK_FORCE_INLINE
-#  endif /* __STDC_VERSION__ */
-#endif
-
-#define QAK_SRC_LOC __FILE__, __LINE__
 
 typedef void *qak_compiler;
 
@@ -31,7 +12,7 @@ typedef void *qak_module;
 
 /** A UTF-8 string from a Source with length bytes. **/
 typedef struct qak_string {
-    const char *data;
+    uint8_t *data;
     size_t length;
 } qak_string;
 
@@ -229,6 +210,10 @@ typedef struct qak_error {
     qak_span span;
 } qak_error;
 
+QAK_ARRAY_DECLARE(qak_array_token, qak_token)
+QAK_ARRAY_DECLARE(qak_array_ast_node, qak_ast_node)
+QAK_ARRAY_DECLARE(qak_array_error, qak_error)
+
 /** Compiler **/
 qak_compiler qak_compiler_new();
 
@@ -269,6 +254,4 @@ void qak_print_struct_offsets();
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
