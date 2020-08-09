@@ -242,7 +242,6 @@ namespace qak {
         Or,
         Xor,
         Not,
-        Hash,
         QuestionMark,
         Unknown,
 

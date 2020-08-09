@@ -45,6 +45,7 @@
         array->size = 0; \
         array->capacity = initialCapacity; \
         array->items = (itemType*)allocator->allocate(allocator, sizeof(itemType) * initialCapacity, __FILE__, __LINE__); \
+        array->allocator = allocator; \
         return array; \
     } \
     void name##_delete(name* self) { \

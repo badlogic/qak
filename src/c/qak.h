@@ -12,12 +12,13 @@ typedef void *qak_module;
 
 /** A UTF-8 string from a Source with length bytes. **/
 typedef struct qak_string {
-    uint8_t *data;
+    char *data;
     size_t length;
 } qak_string;
 
 /** A source file with a name **/
 typedef struct qak_source {
+    qak_allocator *allocator;
     qak_string data;
     qak_string fileName;
 } qak_source;
@@ -63,7 +64,6 @@ typedef enum qak_token_type {
     QakTokenOr,
     QakTokenXor,
     QakTokenNot,
-    QakTokenHash,
     QakTokenQuestionMark,
     QakTokenUnknown,
 
@@ -211,7 +211,9 @@ typedef struct qak_error {
 } qak_error;
 
 QAK_ARRAY_DECLARE(qak_array_token, qak_token)
+
 QAK_ARRAY_DECLARE(qak_array_ast_node, qak_ast_node)
+
 QAK_ARRAY_DECLARE(qak_array_error, qak_error)
 
 /** Compiler **/

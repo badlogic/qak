@@ -85,12 +85,12 @@ void generateLiteralToTokenArray() {
 
     printf("static const uint32_t literalToTokenType[] = {\n");
     for (int i = 0; i < (int) types.size(); i++) {
-        printf("\t%d", types[i]);
+        printf("%d", types[i]);
         if (i < (int) types.size() - 1)
             if (types[i] != qak::Unknown)
-                printf(", // %s\n", tokenizer::tokenTypeToString(types[i]));
+                printf(" /* %s */, ", tokenizer::tokenTypeToString(types[i]));
             else
-                printf(",\n");
+                printf(", ");
         else
             printf("\n");
     }
@@ -98,6 +98,7 @@ void generateLiteralToTokenArray() {
 }
 
 int main() {
+    generateLiteralToTokenArray();
     testTokenizer();
     testError();
     testBench();
