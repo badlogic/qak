@@ -9,7 +9,7 @@ static void printIndent(int indent) {
 }
 
 static void printSpan(const char *label, qak_span *span) {
-    printf("%s%.*s\n", label, (int)span->data.length, span->data.data);
+    printf("%s%.*s\n", label, (int) span->data.length, span->data.data);
 }
 
 static void printAstNodeRecursive(qak_module module, qak_ast_node *node, int indent) {
