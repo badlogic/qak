@@ -16,13 +16,6 @@ typedef struct qak_string {
     size_t length;
 } qak_string;
 
-/** A source file with a name **/
-typedef struct qak_source {
-    qak_allocator *allocator;
-    qak_string data;
-    qak_string fileName;
-} qak_source;
-
 typedef struct qak_span {
     qak_string data;
     uint32_t startLine;
@@ -30,10 +23,19 @@ typedef struct qak_span {
 } qak_span;
 
 typedef struct qak_line {
-    qak_source *source;
     qak_string data;
     uint32_t lineNumber;
 } qak_line;
+
+QAK_ARRAY_IMPLEMENT_INLINE(qak_array_line, qak_line)
+
+/** A source file with a name **/
+typedef struct qak_source {
+    qak_allocator *allocator;
+    qak_string data;
+    qak_string fileName;
+    qak_array_line *lines;
+} qak_source;
 
 typedef enum qak_token_type {
     QakTokenPeriod = 0,
@@ -247,6 +249,9 @@ qak_ast_module *qak_module_get_ast(qak_module module);
 qak_ast_node *qak_module_get_ast_node(qak_module module, qak_ast_node_index nodeIndex);
 
 void qak_module_print_ast(qak_module module);
+
+/** Error **/
+void qak_error_print(qak_source *source, qak_error *error);
 
 #ifdef WASM
 void qak_print_struct_offsets();

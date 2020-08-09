@@ -27,14 +27,37 @@ qak_source *qak_io_read_source_from_file(qak_allocator *allocator, const char *f
     char *fileNameCopy = QAK_ALLOCATE(allocator, char, fileNameLength);
     memcpy(fileNameCopy, fileName, fileNameLength);
     qak_source *source = QAK_ALLOCATE(allocator, qak_source, 1);
-    *source = (qak_source) {allocator, {(char *) data, size}, {fileNameCopy, fileNameLength - 1}};
+    *source = (qak_source) {allocator, {(char *) data, size}, {fileNameCopy, fileNameLength - 1}, qak_array_line_new(allocator, 16)};
     return source;
 }
 
 void qak_source_delete(qak_source *source) {
     QAK_FREE(source->allocator, source->data.data);
     QAK_FREE(source->allocator, source->fileName.data);
+    qak_array_line_delete(source->lines);
     QAK_FREE(source->allocator, source);
+}
+
+qak_array_line *qak_source_get_lines(qak_source *source) {
+    if (source->lines->size != 0) return source->lines;
+    qak_array_line_add(source->lines, (qak_line) {0});
+
+    uint32_t lineStart = 0;
+    char *data = source->data.data;
+    for (size_t i = 0, n = source->data.length; i < n; i++) {
+        uint8_t c = data[i];
+        if (c == '\n') {
+            qak_line line = {{data + lineStart, i - lineStart}, (uint32_t) source->lines->size};
+            qak_array_line_add(source->lines, line);
+            lineStart = (uint32_t) i + 1;
+        }
+    }
+
+    if (lineStart < source->data.length) {
+        qak_array_line_add(source->lines, (qak_line) {{data + lineStart, source->data.length - lineStart}, source->lines->size});
+    }
+
+    return source->lines;
 }
 
 double qak_io_time_millis() {

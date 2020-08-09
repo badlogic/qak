@@ -138,6 +138,25 @@ void testTokenizer() {
     printf("\n");
 }
 
+void testErrors() {
+    printf("========= Test: tokenizer\n");
+    qak_allocator mem;
+    qak_allocator_init(&mem);
+
+    qak_source *source = qak_io_read_source_from_file(&mem, "data/tokens_error.qak");
+    QAK_CHECK(source, "Couldn't read test file data/tokens.qak");
+
+    qak_array_token *tokens = qak_array_token_new(&mem, 16);
+    qak_array_error *errors = qak_array_error_new(&mem, 16);
+
+    qak_tokenize(source, tokens, errors);
+    QAK_CHECK(errors->size == 1, "Expected 1 error, got %zu", errors->size);
+
+    qak_error_print(source, &errors->items[0]);
+
+    printf("\n");
+}
+
 QAK_ARRAY_DECLARE(qak_array_token_type, qak_token_type)
 
 QAK_ARRAY_IMPLEMENT(qak_array_token_type, qak_token_type)
@@ -174,11 +193,14 @@ void generateLiteralToTokenArray() {
             printf("\n");
     }
     printf("};");
+    printf("\n");
+    printf("\n");
 }
 
 int main(int argc, char **argv) {
     generateLiteralToTokenArray();
     testTokenizer();
+    testErrors();
     testBench();
     return 0;
 }

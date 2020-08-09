@@ -13,7 +13,7 @@ void testBench() {
     Source *source = io::readFile("data/parser_benchmark.qak", mem);
     QAK_CHECK(source != nullptr, "Couldn't read test file data/parser_benchmark.qak");
 
-    Array <Token> tokens(mem);
+    Array<Token> tokens(mem);
     Errors errors(mem, bumpMem);
     uint32_t iterations = 100000;
     for (uint32_t i = 0; i < iterations; i++) {
@@ -35,7 +35,7 @@ void testTokenizer() {
     Source *source = io::readFile("data/tokens.qak", mem);
     QAK_CHECK(source != nullptr, "Couldn't read test file data/tokens.qak");
 
-    Array <Token> tokens(mem);
+    Array<Token> tokens(mem);
     Errors errors(mem, bumpMem);
 
     tokenizer::tokenize(*source, tokens, errors);
@@ -57,7 +57,7 @@ void testError() {
     Source *source = io::readFile("data/tokens_error.qak", mem);
     QAK_CHECK(source != nullptr, "Couldn't read test file data/tokens_error.qak");
 
-    Array <Token> tokens(mem);
+    Array<Token> tokens(mem);
     Errors errors(mem, bumpMem);
 
     tokenizer::tokenize(*source, tokens, errors);
@@ -69,7 +69,7 @@ void testError() {
 void generateLiteralToTokenArray() {
     HeapAllocator mem;
     uint32_t type = Period;
-    Array <qak::TokenType> types(mem);
+    Array<qak::TokenType> types(mem);
     types.setSize(256, qak::Unknown);
 
     // Else check for simple tokens

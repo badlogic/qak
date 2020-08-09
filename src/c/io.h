@@ -6,4 +6,6 @@ qak_source *qak_io_read_source_from_file(qak_allocator *allocator, const char *f
 
 void qak_source_delete(qak_source *source);
 
+qak_array_line *qak_source_get_lines(qak_source *source);
+
 double qak_io_time_millis();
