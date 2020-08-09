@@ -11,10 +11,8 @@
 using namespace qak;
 
 static void spanToQakSpan(Span &span, qak_span &qakSpan) {
-    qakSpan.data.data = (char*)span.source.data + span.start;
+    qakSpan.data.data = (char *) span.source.data + span.start;
     qakSpan.data.length = span.end - span.start;
-    qakSpan.start = span.start;
-    qakSpan.end = span.end;
     qakSpan.startLine = span.startLine;
     qakSpan.endLine = span.endLine;
 }
@@ -67,13 +65,13 @@ struct Module {
             astNodes = mem.allocObject<Array<qak_ast_node>>(QAK_SRC_LOC, mem);
             return linearizeAst(*astNodes, astModule);
         } else {
-            return ((qak_ast_node_index)astNodes->size()) - 1;
+            return ((qak_ast_node_index) astNodes->size()) - 1;
         }
     }
 
     template<typename T>
     void fixedAstNodeArrayToQakAstNodeList(Array<qak_ast_node> &nodes, FixedArray<T *> &array, qak_ast_node_list &list) {
-        list.numNodes = (qak_ast_node_index)array.size();
+        list.numNodes = (qak_ast_node_index) array.size();
         if (list.numNodes > 0) {
             list.nodes = bumpMem->alloc<qak_ast_node_index>(list.numNodes);
             for (size_t i = 0; i < list.numNodes; i++) {
@@ -182,7 +180,7 @@ struct Module {
         }
 
         nodes.add(astNode);
-        return ((qak_ast_node_index)nodes.size()) - 1;
+        return ((qak_ast_node_index) nodes.size()) - 1;
     }
 };
 
@@ -249,9 +247,9 @@ EMSCRIPTEN_KEEPALIVE void qak_module_delete(qak_module moduleHandle) {
 
 EMSCRIPTEN_KEEPALIVE void qak_module_get_source(qak_module moduleHandle, qak_source *source) {
     Module *module = (Module *) moduleHandle;
-    source->fileName.data = (char*)module->source->fileName;
+    source->fileName.data = (char *) module->source->fileName;
     source->fileName.length = strlen(module->source->fileName);
-    source->data.data = (char*)module->source->data;
+    source->data.data = (char *) module->source->data;
     source->data.length = module->source->size;
 }
 
@@ -265,7 +263,7 @@ EMSCRIPTEN_KEEPALIVE void qak_module_get_error(qak_module moduleHandle, int erro
     Error &error = module->errors.getErrors()[errorIndex];
     Span &span = error.span;
 
-    errorResult->errorMessage.data = (char*)error.message;
+    errorResult->errorMessage.data = (char *) error.message;
     errorResult->errorMessage.length = strlen(error.message);
     spanToQakSpan(span, errorResult->span);
 }

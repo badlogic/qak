@@ -13,6 +13,90 @@ static const uint32_t literalToTokenType[] = {
         27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27
 };
 
+const char *qak_token_type_to_string(qak_token_type type) {
+    switch (type) {
+        case QakTokenPeriod:
+            return ".";
+        case QakTokenComma:
+            return ",";
+        case QakTokenSemicolon:
+            return ";";
+        case QakTokenColon:
+            return ":";
+        case QakTokenPlus:
+            return "+";
+        case QakTokenMinus:
+            return "-";
+        case QakTokenAsterisk:
+            return "*";
+        case QakTokenForwardSlash:
+            return "/";
+        case QakTokenPercentage:
+            return "%";
+        case QakTokenLeftParenthesis:
+            return "(";
+        case QakTokenRightParenthesis:
+            return ")";
+        case QakTokenLeftBracket:
+            return "[";
+        case QakTokenRightBracket:
+            return "]";
+        case QakTokenLeftCurly:
+            return "{";
+        case QakTokenRightCurly:
+            return "}";
+        case QakTokenLess:
+            return "<";
+        case QakTokenGreater:
+            return ">";
+        case QakTokenLessEqual:
+            return "<=";
+        case QakTokenGreaterEqual:
+            return ">=";
+        case QakTokenEqual:
+            return "==";
+        case QakTokenNotEqual:
+            return "!=";
+        case QakTokenAssignment:
+            return "=";
+        case QakTokenAnd:
+            return "&";
+        case QakTokenOr:
+            return "|";
+        case QakTokenXor:
+            return "^";
+        case QakTokenNot:
+            return "!";
+        case QakTokenQuestionMark:
+            return "?";
+        case QakTokenBooleanLiteral:
+            return "Boolean literal";
+        case QakTokenDoubleLiteral:
+            return "Double literal";
+        case QakTokenFloatLiteral:
+            return "Float literal";
+        case QakTokenLongLiteral:
+            return "Long literal";
+        case QakTokenIntegerLiteral:
+            return "Integer literal";
+        case QakTokenShortLiteral:
+            return "Short literal";
+        case QakTokenByteLiteral:
+            return "Byte literal";
+        case QakTokenCharacterLiteral:
+            return "Character literal";
+        case QakTokenStringLiteral:
+            return "String literal";
+        case QakTokenNothingLiteral:
+            return "Nothing literal";
+        case QakTokenIdentifier:
+            return "Identifier";
+        case QakTokenUnknown:
+            return "Unknown";
+    }
+    return NULL;
+}
+
 typedef struct qak_character_stream {
     /* The source the stream traverses. */
     const qak_source *source;
@@ -33,7 +117,7 @@ typedef struct qak_character_stream {
     uint32_t spanLineStart;
 } qak_character_stream;
 
-static QAK_FORCE_INLINE void stream_init(qak_character_stream *stream, qak_source *source) {
+QAK_INLINE void stream_init(qak_character_stream *stream, qak_source *source) {
     stream->source = source;
     stream->index = 0;
     stream->line = 1;
@@ -42,7 +126,7 @@ static QAK_FORCE_INLINE void stream_init(qak_character_stream *stream, qak_sourc
     stream->spanLineStart = 0;
 }
 
-static QAK_FORCE_INLINE uint32_t next_utf8_character(const char *data, uint32_t *index) {
+QAK_INLINE uint32_t next_utf8_character(const char *data, uint32_t *index) {
     static const uint32_t utf8Offsets[6] = {
             0x00000000UL, 0x00003080UL, 0x000E2080UL,
             0x03C82080UL, 0xFA082080UL, 0x82082080UL
@@ -61,24 +145,24 @@ static QAK_FORCE_INLINE uint32_t next_utf8_character(const char *data, uint32_t 
 }
 
 /* Returns whether the stream has more UTF-8 characters */
-static QAK_FORCE_INLINE bool has_more(qak_character_stream *stream) {
+QAK_INLINE bool has_more(qak_character_stream *stream) {
     return stream->index < stream->end;
 }
 
 /* Returns the current UTF-8 character and advances to the next character */
-static QAK_FORCE_INLINE uint32_t consume(qak_character_stream *stream) {
+QAK_INLINE uint32_t consume(qak_character_stream *stream) {
     return next_utf8_character(stream->source->data.data, &stream->index);
 }
 
 /* Returns the current UTF-8 character without advancing to the next character */
-static QAK_FORCE_INLINE uint32_t peek(qak_character_stream *stream) {
+QAK_INLINE uint32_t peek(qak_character_stream *stream) {
     uint32_t i = stream->index;
     return next_utf8_character(stream->source->data.data, &i);
 }
 
 /* Returns true if the current UTF-8 character matches the needle, false otherwise.
  * Advances to the next character if consume is true */
-static QAK_FORCE_INLINE bool match(qak_character_stream *stream, const char *needleData, bool consume) {
+QAK_INLINE bool match(qak_character_stream *stream, const char *needleData, bool consume) {
     uint32_t needleLength = 0;
     const char *sourceData = stream->source->data.data;
     for (uint32_t i = 0, j = stream->index; needleData[i] != 0; i++, needleLength++) {
@@ -92,7 +176,7 @@ static QAK_FORCE_INLINE bool match(qak_character_stream *stream, const char *nee
 
 /* Returns true if the current UTF-8 character is a digit ([0-9]), false otherwise.
  * Advances to the next character if consume is true */
-static QAK_FORCE_INLINE bool match_digit(qak_character_stream *stream, bool consume) {
+QAK_INLINE bool match_digit(qak_character_stream *stream, bool consume) {
     if (!has_more(stream)) return false;
     char c = stream->source->data.data[stream->index];
     if (c >= '0' && c <= '9') {
@@ -104,7 +188,7 @@ static QAK_FORCE_INLINE bool match_digit(qak_character_stream *stream, bool cons
 
 /* Returns true if the current UTF-8 character is a hex-digit ([0-9a-fA-F]), false otherwise.
  * Advances to the next character if consume is true */
-static QAK_FORCE_INLINE bool match_hex(qak_character_stream *stream, bool consume) {
+QAK_INLINE bool match_hex(qak_character_stream *stream, bool consume) {
     if (!has_more(stream)) return false;
     char c = stream->source->data.data[stream->index];
     if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
@@ -117,7 +201,7 @@ static QAK_FORCE_INLINE bool match_hex(qak_character_stream *stream, bool consum
 /* Returns true if the current UTF-8 character is valid as the first character
  * of an identifier ([a-zA-Z_] or any unicode character >= 0xc0), e.g. variable
  * name, false otherwise. Advances to the next character if consume is true */
-static QAK_FORCE_INLINE bool match_identifier_start(qak_character_stream *stream, bool consume) {
+QAK_INLINE bool match_identifier_start(qak_character_stream *stream, bool consume) {
     if (!has_more(stream)) return false;
     uint32_t idx = stream->index;
     const char *sourceData = stream->source->data.data;
@@ -132,7 +216,7 @@ static QAK_FORCE_INLINE bool match_identifier_start(qak_character_stream *stream
 /* Returns true if the current UTF-8 character is valid as the first character
  * of an identifier ([a-zA-Z_] or any unicode character >= 0x80), e.g. variable
  * name, false otherwise. Advances to the next character if consume is true */
-static QAK_FORCE_INLINE bool match_identifier_part(qak_character_stream *stream, bool consume) {
+QAK_INLINE bool match_identifier_part(qak_character_stream *stream, bool consume) {
     if (!has_more(stream)) return false;
     uint32_t idx = stream->index;
     const char *sourceData = stream->source->data.data;
@@ -146,7 +230,7 @@ static QAK_FORCE_INLINE bool match_identifier_part(qak_character_stream *stream,
 
 /* Skips all white space characters ([' '\r\n\t]) and single-line comments.
  * Comments start with '#' and end at the end of the current line. */
-static QAK_FORCE_INLINE void skip_white_space(qak_character_stream *stream) {
+QAK_INLINE void skip_white_space(qak_character_stream *stream) {
     const char *sourceData = stream->source->data.data;
     while (true) {
         if (stream->index >= stream->end) return;
@@ -178,7 +262,7 @@ static QAK_FORCE_INLINE void skip_white_space(qak_character_stream *stream) {
 }
 
 /* Mark the start of a span at the current position in the stream. See Span::endSpan(). */
-static QAK_FORCE_INLINE void start_span(qak_character_stream *stream) {
+QAK_INLINE void start_span(qak_character_stream *stream) {
     stream->spanStart = stream->index;
     stream->spanLineStart = stream->line;
 }
@@ -186,12 +270,10 @@ static QAK_FORCE_INLINE void start_span(qak_character_stream *stream) {
 /* Return the Span ending at the current position, previously started via
  * startSpan(). Calls to startSpan() and endSpan() must match. They can
  * not be nested.*/
-static QAK_FORCE_INLINE qak_span end_span(qak_character_stream *stream) {
+QAK_INLINE qak_span end_span(qak_character_stream *stream) {
     qak_span span;
     span.data.data = stream->source->data.data + stream->spanStart;
     span.data.length = stream->index - stream->spanStart;
-    span.start = stream->spanStart;
-    span.end = stream->index;
     span.startLine = stream->spanLineStart;
     span.endLine = stream->line;
 

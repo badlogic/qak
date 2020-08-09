@@ -22,6 +22,8 @@ typedef struct qak_allocator {
 
 void qak_allocator_init(qak_allocator *self);
 
+void qak_allocator_shutdown(qak_allocator *self);
+
 void qak_allocator_print(qak_allocator *self);
 
 size_t qak_allocator_num_allocated_bytes(qak_allocator *self);

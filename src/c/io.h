@@ -1,7 +1,6 @@
 #pragma once
 
-typedef struct qak_source qak_source;
-typedef struct qak_allocator qak_allocator;
+#include "qak.h"
 
 qak_source *qak_io_read_source_from_file(qak_allocator *allocator, const char *fileName);
 

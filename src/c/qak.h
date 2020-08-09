@@ -25,8 +25,6 @@ typedef struct qak_source {
 
 typedef struct qak_span {
     qak_string data;
-    uint32_t start;
-    uint32_t end;
     uint32_t startLine;
     uint32_t endLine;
 } qak_span;
@@ -38,7 +36,7 @@ typedef struct qak_line {
 } qak_line;
 
 typedef enum qak_token_type {
-    QakTokenPeriod,
+    QakTokenPeriod = 0,
     QakTokenComma,
     QakTokenSemicolon,
     QakTokenColon,
@@ -210,11 +208,11 @@ typedef struct qak_error {
     qak_span span;
 } qak_error;
 
-QAK_ARRAY_DECLARE(qak_array_token, qak_token)
+QAK_ARRAY_IMPLEMENT_INLINE(qak_array_token, qak_token)
 
-QAK_ARRAY_DECLARE(qak_array_ast_node, qak_ast_node)
+QAK_ARRAY_IMPLEMENT_INLINE(qak_array_ast_node, qak_ast_node)
 
-QAK_ARRAY_DECLARE(qak_array_error, qak_error)
+QAK_ARRAY_IMPLEMENT_INLINE(qak_array_error, qak_error)
 
 /** Compiler **/
 qak_compiler qak_compiler_new();

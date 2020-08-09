@@ -44,6 +44,16 @@ void qak_allocator_init(qak_allocator *self) {
     self->head = NULL;
 }
 
+void qak_allocator_shutdown(qak_allocator *self) {
+    qak_allocation_header *header = self->head;
+    while (header) {
+        qak_allocation_header *curr = header;
+        header = header->next;
+        free(curr);
+    }
+    self->head = NULL;
+}
+
 size_t qak_allocator_num_allocated_bytes(qak_allocator *self) {
     size_t numAllocatedBytes = 0;
     qak_allocation_header *header = self->head;

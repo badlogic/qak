@@ -2,22 +2,24 @@
 #include "test.h"
 #include <string.h>
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     qak_allocator mem;
     qak_allocator_init(&mem);
 
     uint8_t *alloc1 = QAK_ALLOCATE(&mem, uint8_t, 16);
     QAK_CHECK(alloc1, "Couldn't allocate array.");
-    qak_allocation_header *header = alloc1 - sizeof(qak_allocation_header);
+    qak_allocation_header *header = (qak_allocation_header *) (alloc1 - sizeof(qak_allocation_header));
     QAK_CHECK(header->numBytes == 16, "Incorrect size in allocation header.");
-    QAK_CHECK(!strcmp(header->sourceFile + strlen(header->sourceFile) - strlen("test_memory.c"), "test_memory.c"), "Incorrect source file in allocation header.");
+    QAK_CHECK(!strcmp(header->sourceFile + strlen(header->sourceFile) - strlen("test_memory.c"), "test_memory.c"),
+              "Incorrect source file in allocation header.");
     QAK_CHECK(header->line == 9, "Incorrect line in allocation header.");
 
     alloc1 = QAK_REALLOCATE(&mem, alloc1, uint8_t, 1);
     QAK_CHECK(alloc1, "Couldn't allocate array.");
-    header = alloc1 - sizeof(qak_allocation_header);
+    header = (qak_allocation_header *) (alloc1 - sizeof(qak_allocation_header));
     QAK_CHECK(header->numBytes == 1, "Incorrect size in allocation header.");
-    QAK_CHECK(!strcmp(header->sourceFile + strlen(header->sourceFile) - strlen("test_memory.c"), "test_memory.c"), "Incorrect source file in allocation header.");
+    QAK_CHECK(!strcmp(header->sourceFile + strlen(header->sourceFile) - strlen("test_memory.c"), "test_memory.c"),
+              "Incorrect source file in allocation header.");
     QAK_CHECK(header->line == 16, "Incorrect line in allocation header.");
 
     uint8_t *alloc2 = QAK_ALLOCATE(&mem, uint8_t, 2);

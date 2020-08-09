@@ -3,6 +3,35 @@
 #include "c/io.h"
 #include "c/allocation.h"
 #include "test.h"
+#include <string.h>
+
+void testBench() {
+    printf("========= Test: tokenizer benchmark\n");
+    double start = qak_io_time_millis();
+    qak_allocator mem;
+    qak_allocator_init(&mem);
+
+    qak_source *source = qak_io_read_source_from_file(&mem, "data/parser_benchmark.qak");
+    QAK_CHECK(source != NULL, "Couldn't read test file data/parser_benchmark.qak");
+
+    qak_array_token *tokens = qak_array_token_new(&mem, 16);
+    qak_array_error *errors = qak_array_error_new(&mem, 16);
+
+    uint32_t iterations = 100000;
+    for (uint32_t i = 0; i < iterations; i++) {
+        qak_array_token_clear(tokens);
+        qak_tokenize(source, tokens, errors);
+    }
+
+    double time = (qak_io_time_millis() - start) / 1000.0;
+    double throughput = (double) source->data.length * iterations / time / 1024 / 1024;
+    printf("File size: %zu bytes\n", source->data.length);
+    printf("Took %f\n", time);
+    printf("Throughput %f MB/s\n", throughput);
+
+    qak_allocator_shutdown(&mem);
+    printf("\n");
+}
 
 void testTokenizer() {
     printf("========= Test: tokenizer\n");
@@ -17,7 +46,7 @@ void testTokenizer() {
     qak_array_error *errors = qak_array_error_new(&mem, 16);
 
     qak_tokenize(source, tokens, errors);
-    QAK_CHECK(tokens->size == 42, "Expected 42 tokens, got %zu", tokens->size);
+    QAK_CHECK(tokens->size == 42, "Expected 42 tokens, got %i", tokens->size);
 
     int i = 0;
     QAK_CHECK(qak_span_matches(&tokens->items[i].span, QAK_STR("<=")), "Unexpected token.");
@@ -105,15 +134,51 @@ void testTokenizer() {
     QAK_CHECK(qak_span_matches(&tokens->items[i].span, QAK_STR("\"Hello world. 한자🥴\"")), "Unexpected token.");
     QAK_CHECK(tokens->items[i++].type == QakTokenStringLiteral, "Unexpected token type.");
 
-    qak_source_delete(source);
-    qak_array_token_delete(tokens);
-    qak_array_error_delete(errors);
-
-    qak_allocator_print(&mem);
+    qak_allocator_shutdown(&mem);
     printf("\n");
 }
 
-int main(int argc, char** argv) {
+QAK_ARRAY_DECLARE(qak_array_token_type, qak_token_type)
+
+QAK_ARRAY_IMPLEMENT(qak_array_token_type, qak_token_type)
+
+/* Use this to generate the lookup table in tokenizer.c in case we add new qak_token_types. */
+void generateLiteralToTokenArray() {
+    qak_allocator mem;
+    qak_allocator_init(&mem);
+    qak_token_type type = QakTokenPeriod;
+    qak_array_token_type *types = qak_array_token_type_new(&mem, 256);
+    qak_array_token_type_set_size(types, 256);
+    for (int i = 0; i < 256; i++) types->items[i] = QakTokenUnknown;
+
+    // Else check for simple tokens
+    while (type != QakTokenUnknown) {
+        const char *literal = qak_token_type_to_string((qak_token_type) type);
+        if (strlen(literal) == 1) {
+            types->items[(size_t) literal[0]] = (qak_token_type) type;
+        } else {
+            printf("Non single-character literal: %s\n", literal);
+        }
+        type++;
+    }
+
+    printf("static const uint32_t literalToTokenType[] = {\n");
+    for (int i = 0; i < (int) types->size; i++) {
+        printf("%d", types->items[i]);
+        if (i < (int) types->size - 1)
+            if (types->items[i] != QakTokenUnknown)
+                printf(" /* %s */, ", qak_token_type_to_string(types->items[i]));
+            else
+                printf(", ");
+        else
+            printf("\n");
+    }
+    printf("};");
+}
+
+int main(int argc, char **argv) {
+    generateLiteralToTokenArray();
     testTokenizer();
+    testBench();
     return 0;
 }
