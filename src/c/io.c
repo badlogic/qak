@@ -31,6 +31,19 @@ qak_source *qak_io_read_source_from_file(qak_allocator *allocator, const char *f
     return source;
 }
 
+qak_source *qak_io_read_source_from_memory(qak_allocator *allocator, const char *fileName, const char *sourceCode) {
+    size_t size = strlen(sourceCode) + 1;
+    uint8_t *data = QAK_ALLOCATE(allocator, uint8_t, size);
+    memcpy(data, sourceCode, size);
+
+    size_t fileNameLength = strlen(fileName) + 1;
+    char *fileNameCopy = QAK_ALLOCATE(allocator, char, fileNameLength);
+    memcpy(fileNameCopy, fileName, fileNameLength);
+    qak_source *source = QAK_ALLOCATE(allocator, qak_source, 1);
+    *source = (qak_source) {allocator, {(char *) data, size - 1}, {fileNameCopy, fileNameLength - 1}, qak_array_line_new(allocator, 16)};
+    return source;
+}
+
 void qak_source_delete(qak_source *source) {
     QAK_FREE(source->allocator, source->data.data);
     QAK_FREE(source->allocator, source->fileName.data);
@@ -40,7 +53,7 @@ void qak_source_delete(qak_source *source) {
 
 qak_array_line *qak_source_get_lines(qak_source *source) {
     if (source->lines->size != 0) return source->lines;
-    qak_array_line_add(source->lines, (qak_line) {0});
+    qak_array_line_add(source->lines, (qak_line) {{0}, 0});
 
     uint32_t lineStart = 0;
     char *data = source->data.data;

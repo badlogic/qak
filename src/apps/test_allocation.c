@@ -3,6 +3,9 @@
 #include <string.h>
 
 int main(int argc, char **argv) {
+    QAK_UNUSED(argc);
+    QAK_UNUSED(argv);
+
     qak_allocator mem;
     qak_allocator_init(&mem);
 

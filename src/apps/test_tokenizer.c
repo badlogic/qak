@@ -1,7 +1,6 @@
 #include "c/qak.h"
-#include "c/tokenizer.h"
 #include "c/io.h"
-#include "c/allocation.h"
+#include "c/tokenizer.h"
 #include "test.h"
 #include <string.h>
 
@@ -30,7 +29,7 @@ void testBench() {
     printf("Throughput %f MB/s\n", throughput);
 
     qak_allocator_shutdown(&mem);
-    printf("\n");
+    printf("SUCCESS\n");
 }
 
 void testTokenizer() {
@@ -46,7 +45,7 @@ void testTokenizer() {
     qak_array_error *errors = qak_array_error_new(&mem, 16);
 
     qak_tokenize(source, tokens, errors);
-    QAK_CHECK(tokens->size == 42, "Expected 42 tokens, got %i", tokens->size);
+    QAK_CHECK(tokens->size == 42, "Expected 42 tokens, got %zu", tokens->size);
 
     int i = 0;
     QAK_CHECK(qak_span_matches(&tokens->items[i].span, QAK_STR("<=")), "Unexpected token.");
@@ -135,7 +134,7 @@ void testTokenizer() {
     QAK_CHECK(tokens->items[i++].type == QakTokenStringLiteral, "Unexpected token type.");
 
     qak_allocator_shutdown(&mem);
-    printf("\n");
+    printf("SUCCESS\n");
 }
 
 void testErrors() {
@@ -154,7 +153,7 @@ void testErrors() {
 
     qak_error_print(source, &errors->items[0]);
 
-    printf("\n");
+    printf("SUCCESS\n");
 }
 
 QAK_ARRAY_DECLARE(qak_array_token_type, qak_token_type)
@@ -198,6 +197,9 @@ void generateLiteralToTokenArray() {
 }
 
 int main(int argc, char **argv) {
+    QAK_UNUSED(argc);
+    QAK_UNUSED(argv);
+
     generateLiteralToTokenArray();
     testTokenizer();
     testErrors();

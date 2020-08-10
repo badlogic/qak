@@ -45,8 +45,8 @@ add_executable(test_memory ${INCLUDES} "src/apps/test_memory.cpp")
 target_link_libraries(test_memory LINK_PUBLIC qak-lib)
 
 include_directories(src/apps)
-add_executable(test_memory_c ${INCLUDES} "src/apps/test_memory.c")
-target_link_libraries(test_memory_c LINK_PUBLIC qak-lib)
+add_executable(test_allocation ${INCLUDES} "src/apps/test_allocation.c")
+target_link_libraries(test_allocation LINK_PUBLIC qak-lib)
 
 include_directories(src/apps)
 add_executable(test_map ${INCLUDES} "src/apps/test_map.cpp")
@@ -63,6 +63,10 @@ target_link_libraries(test_tokenizer_c LINK_PUBLIC qak-lib)
 include_directories(src/apps)
 add_executable(test_parser ${INCLUDES} "src/apps/test_parser.cpp")
 target_link_libraries(test_parser LINK_PUBLIC qak-lib)
+
+include_directories(src/apps)
+add_executable(test_parser_c ${INCLUDES} "src/apps/test_parser.c")
+target_link_libraries(test_parser_c LINK_PUBLIC qak-lib)
 
 include_directories(src/apps)
 add_executable(test_c_api ${INCLUDES} "src/apps/test_c_api.c")
