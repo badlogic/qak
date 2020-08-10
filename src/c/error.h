@@ -2,6 +2,10 @@
 
 #include "qak.h"
 
-#define QAK_ERROR(errors, span, message) { qak_array_error_add(errors, (qak_error) { { message, sizeof(message) }, span }); return; }
+qak_errors qak_errors_init(qak_allocator *allocator);
 
-qak_error qak_error_from_string(qak_allocator *allocator, qak_span *span, const char *msg, ...);
+void qak_errors_shutdown(qak_errors *errors);
+
+void qak_errors_add(qak_errors *errors, qak_source *source, qak_span span, const char *msg, ...);
+
+void qak_error_print(qak_error *error);

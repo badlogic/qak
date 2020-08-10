@@ -85,6 +85,8 @@ typedef struct qak_token {
     qak_span span;
 } qak_token;
 
+QAK_ARRAY_IMPLEMENT_INLINE(qak_array_token, qak_token)
+
 typedef enum qak_ast_type {
     QakAstTypeSpecifier,
     QakAstParameter,
@@ -205,16 +207,20 @@ typedef struct qak_ast_node {
     } data;
 } qak_ast_node;
 
+QAK_ARRAY_IMPLEMENT_INLINE(qak_array_ast_node, qak_ast_node)
+
 typedef struct qak_error {
+    qak_source *source;
     qak_string errorMessage;
     qak_span span;
 } qak_error;
 
-QAK_ARRAY_IMPLEMENT_INLINE(qak_array_token, qak_token)
-
-QAK_ARRAY_IMPLEMENT_INLINE(qak_array_ast_node, qak_ast_node)
-
 QAK_ARRAY_IMPLEMENT_INLINE(qak_array_error, qak_error)
+
+typedef struct qak_errors {
+    qak_allocator *allocator;
+    qak_array_error *errors;
+} qak_errors;
 
 /** Compiler **/
 qak_compiler qak_compiler_new();
@@ -249,9 +255,6 @@ qak_ast_module *qak_module_get_ast(qak_module module);
 qak_ast_node *qak_module_get_ast_node(qak_module module, qak_ast_node_index nodeIndex);
 
 void qak_module_print_ast(qak_module module);
-
-/** Error **/
-void qak_error_print(qak_source *source, qak_error *error);
 
 #ifdef WASM
 void qak_print_struct_offsets();

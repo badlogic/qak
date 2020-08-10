@@ -290,7 +290,7 @@ bool qak_span_matches(qak_span *span, const char *needle, size_t length) {
     return true;
 }
 
-void qak_tokenize(qak_source *source, qak_array_token *tokens, qak_array_error *errors) {
+void qak_tokenize(qak_source *source, qak_array_token *tokens, qak_errors *errors) {
     qak_character_stream stream;
     stream_init(&stream, source);
 
@@ -312,13 +312,22 @@ void qak_tokenize(qak_source *source, qak_array_token *tokens, qak_array_error *
                 }
             }
             if (match(&stream, "b", true)) {
-                if (type == QakTokenFloatLiteral) QAK_ERROR(errors, end_span(&stream), "Byte literal can not have a decimal point.");
+                if (type == QakTokenFloatLiteral) {
+                    qak_errors_add(errors, source, end_span(&stream), "Byte literal can not have a decimal point.");
+                    return;
+                }
                 type = QakTokenByteLiteral;
             } else if (match(&stream, "s", true)) {
-                if (type == QakTokenFloatLiteral) QAK_ERROR(errors, end_span(&stream), "Short literal can not have a decimal point.");
+                if (type == QakTokenFloatLiteral) {
+                    qak_errors_add(errors, source, end_span(&stream), "Short literal can not have a decimal point.");
+                    return;
+                }
                 type = QakTokenShortLiteral;
             } else if (match(&stream, "l", true)) {
-                if (type == QakTokenFloatLiteral) QAK_ERROR(errors, end_span(&stream), "Long literal can not have a decimal point.");
+                if (type == QakTokenFloatLiteral) {
+                    qak_errors_add(errors, source, end_span(&stream), "Long literal can not have a decimal point.");
+                    return;
+                }
                 type = QakTokenLongLiteral;
             } else if (match(&stream, "f", true)) {
                 type = QakTokenFloatLiteral;
@@ -334,8 +343,11 @@ void qak_tokenize(qak_source *source, qak_array_token *tokens, qak_array_error *
             // Note: escape sequences like \n are parsed in the AST
             match(&stream, "\\", true);
             consume(&stream);
-            if (!match(&stream, "'", true)) QAK_ERROR(errors, end_span(&stream),
-                                                      "Expected closing ' for character literal.");
+            if (!match(&stream, "'", true)) {
+                qak_errors_add(errors, source, end_span(&stream), "Expected closing ' for character literal.");
+                return;
+            }
+
             qak_array_token_add(tokens, (qak_token) {QakTokenCharacterLiteral, end_span(&stream)});
             continue;
         }
@@ -353,11 +365,15 @@ void qak_tokenize(qak_source *source, qak_array_token *tokens, qak_array_error *
                     break;
                 }
                 if (match(&stream, "\n", false)) {
-                    QAK_ERROR(errors, end_span(&stream), "String literal is not closed by double quote");
+                    qak_errors_add(errors, source, end_span(&stream), "String literal is not closed by double quote");
+                    return;
                 }
                 consume(&stream);
             }
-            if (!matchedEndQuote) QAK_ERROR(errors, end_span(&stream), "String literal is not closed by double quote");
+            if (!matchedEndQuote) {
+                qak_errors_add(errors, source, end_span(&stream), "String literal is not closed by double quote");
+                return;
+            }
             qak_span stringSpan = end_span(&stream);
             qak_array_token_add(tokens, (qak_token) {QakTokenStringLiteral, stringSpan});
             continue;
@@ -385,7 +401,10 @@ void qak_tokenize(qak_source *source, qak_array_token *tokens, qak_array_error *
         qak_token_type type = QakTokenUnknown;
         if (character < sizeof(literalToTokenType)) {
             type = (qak_token_type) literalToTokenType[character];
-            if (type == QakTokenUnknown) QAK_ERROR(errors, end_span(&stream), "Unknown token");
+            if (type == QakTokenUnknown) {
+                qak_errors_add(errors, source, end_span(&stream), "Unknown token");
+                return;
+            }
             if (!has_more(&stream)) {
                 qak_array_token_add(tokens, (qak_token) {(qak_token_type) type, end_span(&stream)});
                 continue;
@@ -407,7 +426,10 @@ void qak_tokenize(qak_source *source, qak_array_token *tokens, qak_array_error *
                     case QakTokenAssignment:
                         qak_array_token_add(tokens, (qak_token) {(qak_token_type) QakTokenEqual, end_span(&stream)});
                         break;
-                    default: QAK_ERROR(errors, end_span(&stream), "Found unknown two character token");
+                    default: {
+                        qak_errors_add(errors, source, end_span(&stream), "Found unknown two character token");
+                        return;
+                    }
                 }
             } else {
                 qak_array_token_add(tokens, (qak_token) {(qak_token_type) type, end_span(&stream)});
@@ -415,6 +437,6 @@ void qak_tokenize(qak_source *source, qak_array_token *tokens, qak_array_error *
             continue;
         }
 
-        QAK_ERROR(errors, end_span(&stream), "Unknown token");
+        qak_errors_add(errors, source, end_span(&stream), "Unknown token");
     }
 }
