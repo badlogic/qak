@@ -121,7 +121,7 @@ QAK_INLINE void stream_init(qak_character_stream *stream, qak_source *source) {
     stream->source = source;
     stream->index = 0;
     stream->line = 1;
-    stream->end = source->data.length;
+    stream->end = (uint32_t)source->data.length;
     stream->spanStart = 0;
     stream->spanLineStart = 0;
 }

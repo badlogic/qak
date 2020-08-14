@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+void qak_errors_print(qak_errors *errors) {
+    for (size_t i = 0; i < errors->errors->size; i++)
+        qak_error_print(&errors->errors->items[i]);
+}
+
 void qak_error_print(qak_error *error) {
     qak_source *source = error->source;
     qak_source_get_lines(source);
@@ -13,9 +18,9 @@ void qak_error_print(qak_error *error) {
 
     if (line->data.length > 0) {
         printf("%.*s\n", (int) line->data.length, line->data.data);
-        int32_t errorStart = error->span.data.data - line->data.data;
-        int32_t errorEnd = errorStart + error->span.data.length - 1;
-        for (int32_t i = 0, n = line->data.length; i < n; i++) {
+        int32_t errorStart = (int32_t)(error->span.data.data - line->data.data);
+        int32_t errorEnd = errorStart + (int32_t)error->span.data.length - 1;
+        for (int32_t i = 0, n = (int32_t)line->data.length; i < n; i++) {
             bool useTab = line->data.data[i] == '\t';
             printf("%s", i >= errorStart && i <= errorEnd ? "^" : (useTab ? "\t" : " "));
         }

@@ -104,12 +104,7 @@ typedef enum qak_ast_type {
     QakAstModule
 } qak_ast_type;
 
-typedef int32_t qak_ast_node_index;
-
-typedef struct qak_ast_node_list {
-    uint32_t numNodes;
-    qak_ast_node_index *nodes;
-} qak_ast_node_list;
+typedef struct qak_ast_node qak_ast_node;
 
 typedef struct qak_ast_type_specifier {
     qak_span name;
@@ -117,52 +112,57 @@ typedef struct qak_ast_type_specifier {
 
 typedef struct qak_ast_parameter {
     qak_span name;
-    qak_ast_node_index typeSpecifier;
+    qak_ast_node *typeSpecifier;
 } qak_ast_parameter;
 
 typedef struct qak_ast_function {
     qak_span name;
-    qak_ast_node_list parameters;
-    qak_ast_node_index returnType;
-    qak_ast_node_list statements;
+    qak_ast_node *parameters;
+    uint32_t numParameters;
+    qak_ast_node *returnType;
+    qak_ast_node *statements;
+    uint32_t numStatements;
 } qak_ast_function;
 
 typedef struct qak_ast_variable {
     qak_span name;
-    qak_ast_node_index typeSpecifier;
-    qak_ast_node_index initializerExpression;
+    qak_ast_node *typeSpecifier;
+    qak_ast_node *initializerExpression;
 } qak_ast_variable;
 
 typedef struct qak_ast_while {
-    qak_ast_node_index condition;
-    qak_ast_node_list statements;
+    qak_ast_node *condition;
+    qak_ast_node *statements;
+    uint32_t numStatements;
 } qak_ast_while;
 
 typedef struct qak_ast_if {
-    qak_ast_node_index condition;
-    qak_ast_node_list trueBlock;
-    qak_ast_node_list falseBlock;
+    qak_ast_node *condition;
+    qak_ast_node *trueBlock;
+    uint32_t numTrueBlockStatements;
+    qak_ast_node *falseBlock;
+    uint32_t numFalseBlockStatements;
 } qak_ast_if;
 
 typedef struct qak_ast_return {
-    qak_ast_node_index returnValue;
+    qak_ast_node *returnValue;
 } qak_ast_return;
 
 typedef struct qak_ast_ternary_operation {
-    qak_ast_node_index condition;
-    qak_ast_node_index trueValue;
-    qak_ast_node_index falseValue;
+    qak_ast_node *condition;
+    qak_ast_node *trueValue;
+    qak_ast_node *falseValue;
 } qak_ast_ternary_operation;
 
 typedef struct qak_ast_binary_operation {
     qak_span op;
-    qak_ast_node_index left;
-    qak_ast_node_index right;
+    qak_ast_node *left;
+    qak_ast_node *right;
 } qak_ast_binary_operation;
 
 typedef struct qak_ast_unary_operation {
     qak_span op;
-    qak_ast_node_index value;
+    qak_ast_node *value;
 } qak_ast_unary_operation;
 
 typedef struct qak_ast_literal {
@@ -175,15 +175,17 @@ typedef struct qak_ast_variable_access {
 } qak_ast_variable_access;
 
 typedef struct qak_ast_function_call {
-    qak_ast_node_index variableAccess;
-    qak_ast_node_list arguments;
+    qak_ast_node *variableAccess;
+    qak_ast_node *arguments;
+    uint32_t numArguments;
 } qak_ast_function_call;
 
 typedef struct qak_ast_module {
     qak_span name;
-    qak_ast_node_list variables;
-    qak_ast_node_list functions;
-    qak_ast_node_list statements;
+    qak_ast_node *functions;
+    uint32_t numFunctions;
+    qak_ast_node *statements;
+    uint32_t numStatements;
 } qak_ast_module;
 
 typedef struct qak_ast_node {
@@ -205,6 +207,7 @@ typedef struct qak_ast_node {
         qak_ast_function_call functionCall;
         qak_ast_module module;
     } data;
+    qak_ast_node *next;
 } qak_ast_node;
 
 QAK_ARRAY_IMPLEMENT_INLINE(qak_array_ast_node, qak_ast_node)
@@ -251,8 +254,6 @@ void qak_module_get_token(qak_module moduleHandle, int tokenIndex, qak_token *to
 void qak_module_print_tokens(qak_module module);
 
 qak_ast_module *qak_module_get_ast(qak_module module);
-
-qak_ast_node *qak_module_get_ast_node(qak_module module, qak_ast_node_index nodeIndex);
 
 void qak_module_print_ast(qak_module module);
 

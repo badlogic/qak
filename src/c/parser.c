@@ -107,24 +107,50 @@ void qak_parser_shutdown(qak_parser *parser) {
     qak_array_token_delete(parser->tokens);
 }
 
-QAK_INLINE qak_ast_node *new_ast_node(qak_parser *parser, qak_ast_type type, qak_span span) {
+QAK_INLINE qak_ast_node *new_ast_node(qak_parser *parser, qak_ast_type type, qak_span *span) {
+    // BOZO use bump allocator tied to module
     qak_array_ast_node_set_size(parser->nodes, parser->nodes->size + 1);
     qak_ast_node *node = &parser->nodes->items[parser->nodes->size - 1];
     node->type = type;
-    node->span = span;
+    node->span = *span;
+    node->next = NULL;
+    return node;
+}
+
+QAK_INLINE qak_ast_node *new_ast_node_2(qak_parser *parser, qak_ast_type type, qak_span *start, qak_span *end) {
+    // BOZO use bump allocator tied to module
+    qak_array_ast_node_set_size(parser->nodes, parser->nodes->size + 1);
+    qak_ast_node *node = &parser->nodes->items[parser->nodes->size - 1];
+    node->type = type;
+    node->span.data = start->data;
+    node->span.data.length = end->data.data - start->data.data;
+    node->span.startLine = start->startLine;
+    node->span.endLine = end->endLine;
+    node->next = NULL;
     return node;
 }
 
 qak_ast_node *parse_module(qak_parser *parser);
 
-qak_ast_node *parse_statement(qak_parser *parser);
-
 qak_ast_node *parse_function(qak_parser *parser);
 
-bool parse_parameters(qak_parser *parser);
+qak_ast_node *parse_parameter(qak_parser *parser);
+
+bool parse_parameters(qak_parser *parser, qak_ast_node **parametersHead, uint32_t *numParameters);
 
 qak_ast_node *parse_type_specifier(qak_parser *parser);
 
+qak_ast_node *parse_statement(qak_parser *parser);
+
+qak_ast_node *parse_variable(qak_parser *parser);
+
+qak_ast_node *parse_while(qak_parser *parser);
+
+qak_ast_node *parse_if(qak_parser *parser);
+
+qak_ast_node *parse_return(qak_parser *parser);
+
+qak_ast_node *parse_expression(qak_parser *parser);
 
 qak_ast_node *parse_module(qak_parser *parser) {
     qak_token *moduleKeyword = expect_string(&parser->stream, QAK_STR("module"));
@@ -133,17 +159,63 @@ qak_ast_node *parse_module(qak_parser *parser) {
     qak_token *moduleName = expect(&parser->stream, QakTokenIdentifier);
     if (!moduleName) return NULL;
 
-    qak_ast_node *module = new_ast_node(parser, QakAstModule, moduleName->span);
+    qak_ast_node *module = new_ast_node(parser, QakAstModule, &moduleName->span);
     module->data.module.name = moduleName->span;
+    module->data.module.numStatements = 0;
+    module->data.module.statements = NULL;
+    module->data.module.numFunctions = 0;
+    module->data.module.functions = NULL;
+
     return module;
 }
 
-bool parse_parameters(qak_parser *parser) {
-    return true;
+qak_ast_node *parse_parameter(qak_parser *parser) {
+    qak_token_stream *stream = &parser->stream;
+
+    qak_token *name = consume(stream);
+    if (!expect(stream, QakTokenColon)) return NULL;
+
+    qak_ast_node *type = parse_type_specifier(parser);
+    if (!type) return NULL;
+
+    qak_ast_node *parameter = new_ast_node_2(parser, QakAstParameter, &name->span, &type->span);
+    parameter->data.parameter.name = name->span;
+    parameter->data.parameter.typeSpecifier = type;
+    return parameter;
+}
+
+bool parse_parameters(qak_parser *parser, qak_ast_node **parametersHead, uint32_t *numParameters) {
+    qak_token_stream *stream = &parser->stream;
+    if (!expect(stream, QakTokenLeftParenthesis)) return false;
+
+    qak_ast_node *lastParameter = NULL;
+    while (match(stream, QakTokenIdentifier, false)) {
+        qak_ast_node *parameter = parse_parameter(parser);
+        if (!parameter) return false;
+
+        if (!*parametersHead) {
+            *parametersHead = parameter;
+            lastParameter = parameter;
+        } else {
+            lastParameter->next = parameter;
+            lastParameter = parameter;
+        }
+        (*numParameters)++;
+
+        if (!match(stream, QakTokenComma, true)) break;
+    }
+
+    return expect(stream, QakTokenRightParenthesis);
 }
 
 qak_ast_node *parse_type_specifier(qak_parser *parser) {
-    return NULL;
+    qak_token_stream *stream = &parser->stream;
+    qak_token *name = expect(stream, QakTokenIdentifier);
+    if (!name) return NULL;
+
+    qak_ast_node *type = new_ast_node(parser, QakAstTypeSpecifier, &name->span);
+    type->data.typeSpecifier.name = name->span;
+    return type;
 }
 
 qak_ast_node *parse_function(qak_parser *parser) {
@@ -152,8 +224,9 @@ qak_ast_node *parse_function(qak_parser *parser) {
     qak_token *name = expect(stream, QakTokenIdentifier);
     if (!name) return NULL;
 
-    // BOZO collect parameters
-    if (!parse_parameters(parser)) return NULL;
+    qak_ast_node *parametersHead = NULL;
+    uint32_t numParameters = 0;
+    if (!parse_parameters(parser, &parametersHead, &numParameters)) return NULL;
 
     qak_ast_node *returnType = NULL;
     if (match(stream, QakTokenColon, true)) {
@@ -161,22 +234,89 @@ qak_ast_node *parse_function(qak_parser *parser) {
         if (!returnType) return NULL;
     }
 
+    qak_ast_node *statementsHead = NULL;
+    qak_ast_node *lastStatement = NULL;
+    uint32_t numStatements = 0;
     while (has_more(stream) && !match_string(stream, QAK_STR("end"), false)) {
         qak_ast_node *statement = parse_statement(parser);
         if (!statement) return NULL;
-        // BOZO add statement to function->statements
+        if (!statementsHead) {
+            statementsHead = statement;
+            lastStatement = statement;
+        } else {
+            lastStatement->next = statement;
+            lastStatement = statement;
+        }
+        numStatements++;
     }
 
-    if (expect_string(stream, QAK_STR("end"))) return NULL;
+    if (!expect_string(stream, QAK_STR("end"))) return NULL;
 
-    qak_ast_node *function = new_ast_node(parser, QakAstFunction, name->span);
+    qak_ast_node *function = new_ast_node(parser, QakAstFunction, &name->span);
     function->data.function.name = name->span;
-    // BOZO set statements and parameters
+    function->data.function.returnType = returnType;
+    function->data.function.parameters = parametersHead;
+    function->data.function.numParameters = numParameters;
+    function->data.function.statements = statementsHead;
+    function->data.function.numStatements = numStatements;
+    return function;
+}
+
+qak_ast_node *parse_variable(qak_parser *parser) {
+    qak_token_stream *stream = &parser->stream;
+    expect_string(stream,QAK_STR("var"));
+
+    qak_token *name = expect(stream, QakTokenIdentifier);
+    if (!name) return NULL;
+
+    qak_ast_node *type = NULL;
+    if (match(stream, QakTokenColon, true)) {
+        type = parse_type_specifier(parser);
+        if (!type) return NULL;
+    }
+
+    qak_ast_node *expression = NULL;
+    if (match(stream, QakTokenAssignment, true)) {
+        expression = parse_expression(parser);
+        if (!expression) return NULL;
+    }
+
+    qak_ast_node *variable = new_ast_node(parser, QakAstVariable, &name->span);
+    variable->data.variable.name = name->span;
+    variable->data.variable.typeSpecifier = type;
+    variable->data.variable.initializerExpression = expression;
+    return variable;
+}
+
+qak_ast_node *parse_while(qak_parser *parser) {
+    return NULL;
+}
+
+qak_ast_node *parse_if(qak_parser *parser) {
+    return NULL;
+}
+
+qak_ast_node *parse_return(qak_parser *parser) {
+    return NULL;
+}
+
+qak_ast_node *parse_expression(qak_parser *parser) {
     return NULL;
 }
 
 qak_ast_node *parse_statement(qak_parser *parser) {
-    return NULL;
+    qak_token_stream *stream = &parser->stream;
+    if (match_string(stream, QAK_STR("var"), false)) {
+        return parse_variable(parser);
+    } else if (match_string(stream, QAK_STR("while"), false)) {
+        return parse_while(parser);
+    } else if (match_string(stream, QAK_STR("if"), false)) {
+        return parse_if(parser);
+    } else if (match_string(stream,QAK_STR("return"), false)) {
+        return parse_return(parser);
+    } else {
+        return parse_expression(parser);
+    }
 }
 
 qak_ast_node *qak_parse(qak_parser *parser, qak_source *source, qak_errors *errors) {
@@ -192,22 +332,40 @@ qak_ast_node *qak_parse(qak_parser *parser, qak_source *source, qak_errors *erro
     if (!module) return NULL;
 
     qak_token_stream *stream = &parser->stream;
+    qak_ast_node* lastFunction = NULL;
+    uint32_t numFunctions = 0;
+    qak_ast_node* lastStatement = NULL;
+    uint32_t numStatements = 0;
     while (has_more(stream)) {
         if (match_string(stream, QAK_STR("function"), true)) {
             qak_ast_node *function = parse_function(parser);
             if (!function) return NULL;
 
-            // BOZO add to module->functions
+            if (!module->data.module.functions) {
+                module->data.module.functions = function;
+                lastFunction = function;
+            } else {
+                lastFunction->next = function;
+                lastFunction = function;
+            }
+            numFunctions++;
         } else {
             qak_ast_node *statement = parse_statement(parser);
             if (!statement) return NULL;
 
-            if (statement->type == QakAstVariable) {
-                // BOZO add to module->variables
+            if (!module->data.module.statements) {
+                module->data.module.statements = statement;
+                lastStatement = statement;
+            } else {
+                lastStatement->next = statement;
+                lastStatement = statement;
             }
-            // BOZO add to module->statements
+            numStatements++;
         }
     }
+
+    module->data.module.numFunctions = numFunctions;
+    module->data.module.numStatements = numStatements;
 
     return module;
 }

@@ -8,7 +8,7 @@
 
 #ifdef _MSC_VER
 #  pragma warning(disable : 4127)      /* disable: C4127: conditional expression is constant */
-#  define QAK_INLINE __forceinline
+#  define QAK_INLINE static __forceinline
 #else
 #  if defined (__cplusplus) || defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   /* C99 */
 #    ifdef __GNUC__

@@ -13,7 +13,7 @@ static void printSpan(const char *label, qak_span *span) {
 }
 
 static void printAstNodeRecursive(qak_module module, qak_ast_node *node, int indent) {
-    switch (node->type) {
+    /*switch (node->type) {
         case QakAstTypeSpecifier: {
             printIndent(indent);
             printSpan("Type: ", &node->data.typeSpecifier.name);
@@ -176,7 +176,7 @@ static void printAstNodeRecursive(qak_module module, qak_ast_node *node, int ind
             }
             break;
         }
-    }
+    }*/
 }
 
 int main() {
@@ -191,7 +191,7 @@ int main() {
 
     printSpan("Module: ", &astModule->name);
 
-    printf("Functions: %i\n", astModule->functions.numNodes);
+    /*printf("Functions: %i\n", astModule->functions.numNodes);
     for (size_t i = 0; i < astModule->functions.numNodes; i++) {
         printAstNodeRecursive(module, qak_module_get_ast_node(module, astModule->functions.nodes[i]), 1);
     }
@@ -204,7 +204,7 @@ int main() {
     printf("Statements: %i\n", astModule->statements.numNodes);
     for (size_t i = 0; i < astModule->statements.numNodes; i++) {
         printAstNodeRecursive(module, qak_module_get_ast_node(module, astModule->statements.nodes[i]), 1);
-    }
+    }*/
 
     qak_module_delete(module);
 

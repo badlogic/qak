@@ -103,12 +103,12 @@ static void *bump_allocate(qak_allocator *self, size_t numBytes, const char *sou
 }
 
 static void *bump_reallocate(qak_allocator *self, void *ptr, size_t numBytes, const char *sourceFile, uint32_t line) {
-    printf(stderr, "Bump allocator does not support reallocate()\n");
+    fprintf(stderr, "Bump allocator does not support reallocate()\n");
     abort();
 }
 
 static void bump_free(qak_allocator *self, void *ptr, const char *sourceFile, uint32_t line) {
-    printf(stderr, "Bump allocator does not support free()\n");
+    fprintf(stderr, "Bump allocator does not support free()\n");
     abort();
 }
 
@@ -138,7 +138,7 @@ static void bump_print(qak_allocator *self) {
     qak_bump_allocator_data *data = ((qak_bump_allocator_data *) self->data);
     qak_bump_block_header *block = data->head;
     while (block) {
-        printf("block %p, total: %zu, allocated: %zu\n", block->numBytes, block->allocatedBytes);
+        printf("block %p, total: %zu, allocated: %zu\n", block->base, block->numBytes, block->allocatedBytes);
         block = block->next;
     }
 }

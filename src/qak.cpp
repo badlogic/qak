@@ -60,7 +60,7 @@ struct Module {
         mem.freeObject(source, QAK_SRC_LOC);
     }
 
-    qak_ast_node_index linearizeAst() {
+ /*   qak_ast_node_index linearizeAst() {
         if (astNodes == nullptr) {
             astNodes = mem.allocObject<Array<qak_ast_node>>(QAK_SRC_LOC, mem);
             return linearizeAst(*astNodes, astModule);
@@ -181,7 +181,7 @@ struct Module {
 
         nodes.add(astNode);
         return ((qak_ast_node_index) nodes.size()) - 1;
-    }
+    }*/
 };
 
 EMSCRIPTEN_KEEPALIVE qak_compiler qak_compiler_new() {
@@ -293,18 +293,19 @@ EMSCRIPTEN_KEEPALIVE void qak_module_print_tokens(qak_module moduleHandle) {
 }
 
 EMSCRIPTEN_KEEPALIVE qak_ast_module *qak_module_get_ast(qak_module moduleHandle) {
-    Module *module = (Module *) moduleHandle;
+    /*Module *module = (Module *) moduleHandle;
     qak_ast_node_index moduleIndex = module->linearizeAst();
     if (moduleIndex >= 0) return &module->astNodes->buffer()[moduleIndex].data.module;
-    else return nullptr;
+    else return nullptr;*/
+    return nullptr;
 }
 
-EMSCRIPTEN_KEEPALIVE qak_ast_node *qak_module_get_ast_node(qak_module moduleHandle, qak_ast_node_index nodeIndex) {
+/*EMSCRIPTEN_KEEPALIVE qak_ast_node *qak_module_get_ast_node(qak_module moduleHandle, qak_ast_node_index nodeIndex) {
     Module *module = (Module *) moduleHandle;
     if (nodeIndex < 0) return nullptr;
     module->linearizeAst();
     return &module->astNodes->buffer()[nodeIndex];
-}
+}*/
 
 EMSCRIPTEN_KEEPALIVE void qak_module_print_ast(qak_module moduleHandle) {
     Module *module = (Module *) moduleHandle;
