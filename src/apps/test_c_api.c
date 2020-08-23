@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "c/qak.h"
+#include "qak.h"
 #include "test.h"
 
 #define INDENT 3

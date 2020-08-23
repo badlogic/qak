@@ -6,22 +6,6 @@
 #include "test.h"
 #include <string.h>
 
-void testInitShutdown() {
-    printf("========= Test: parser init/shutdown\n");
-
-    qak_allocator mem = qak_heap_allocator_init();
-    qak_parser parser = qak_parser_init(&mem);
-
-    QAK_CHECK(qak_allocator_num_allocated_bytes(&mem), "Parser init didn't allocate any  memory.");
-
-    qak_parser_shutdown(&parser);
-
-    QAK_CHECK(qak_allocator_num_allocated_bytes(&mem) == 0, "Parser shutdown didn't deallocate all memory.");
-
-    qak_allocator_shutdown(&mem);
-    printf("SUCCESS\n");
-}
-
 void testModule() {
     printf("========= Test: parser simple module\n");
     qak_allocator mem = qak_heap_allocator_init();
@@ -29,24 +13,27 @@ void testModule() {
     qak_source *source = qak_io_read_source_from_file(&mem, "data/parser_module.qak");
     QAK_CHECK(source, "Couldn't read test file data/parser_module.qak");
 
+    qak_array_token *tokens = qak_array_token_new(&mem, 16);
     qak_errors errors = qak_errors_init(&mem);
-    qak_parser parser = qak_parser_init(&mem);
-    qak_ast_node *module = qak_parse(&parser, source, &errors);
+    qak_allocator bump = qak_bump_allocator_init(sizeof(qak_ast_node) * 16);
+    qak_ast_node *module = qak_parse(source, tokens, &errors, &bump);
     QAK_CHECK(module, "Expected module, got null pointer.");
 
+    qak_allocator_shutdown(&bump);
     qak_allocator_shutdown(&mem);
     printf("SUCCESS\n");
 }
 
 void testFunction() {
-    printf("========= Test: parser simple module\n");
+    printf("========= Test: parse function\n");
     qak_allocator mem = qak_heap_allocator_init();
 
     {
         qak_source *source = qak_io_read_source_from_memory(&mem, "function.qak", "module test\nfunction foo()\nend");
         qak_errors errors = qak_errors_init(&mem);
-        qak_parser parser = qak_parser_init(&mem);
-        qak_ast_node *module = qak_parse(&parser, source, &errors);
+        qak_array_token *tokens = qak_array_token_new(&mem, 16);
+        qak_allocator bump = qak_bump_allocator_init(sizeof(qak_ast_node) * 16);
+        qak_ast_node *module = qak_parse(source, tokens, &errors, &bump);
         qak_errors_print(&errors);
         QAK_CHECK(module, "Expected module, got null pointer.");
 
@@ -62,7 +49,8 @@ void testFunction() {
 
         qak_source_delete(source);
         qak_errors_shutdown(&errors);
-        qak_parser_shutdown(&parser);
+        qak_array_token_delete(tokens);
+        qak_allocator_shutdown(&bump);
         qak_allocator_print(&mem);
         QAK_CHECK(qak_allocator_num_allocated_bytes(&mem) == 0, "Expected no allocated memory.");
     }
@@ -70,8 +58,9 @@ void testFunction() {
     {
         qak_source *source = qak_io_read_source_from_memory(&mem, "function.qak", "module test\nfunction foo(): int32\nend");
         qak_errors errors = qak_errors_init(&mem);
-        qak_parser parser = qak_parser_init(&mem);
-        qak_ast_node *module = qak_parse(&parser, source, &errors);
+        qak_array_token *tokens = qak_array_token_new(&mem, 16);
+        qak_allocator bump = qak_bump_allocator_init(sizeof(qak_ast_node) * 16);
+        qak_ast_node *module = qak_parse(source, tokens, &errors, &bump);
         qak_errors_print(&errors);
         QAK_CHECK(module, "Expected module, got null pointer.");
 
@@ -89,7 +78,8 @@ void testFunction() {
 
         qak_source_delete(source);
         qak_errors_shutdown(&errors);
-        qak_parser_shutdown(&parser);
+        qak_array_token_delete(tokens);
+        qak_allocator_shutdown(&bump);
         qak_allocator_print(&mem);
         QAK_CHECK(qak_allocator_num_allocated_bytes(&mem) == 0, "Expected no allocated memory.");
     }
@@ -97,8 +87,9 @@ void testFunction() {
     {
         qak_source *source = qak_io_read_source_from_memory(&mem, "function.qak", "module test\nfunction foo(a: int32): int32\nend");
         qak_errors errors = qak_errors_init(&mem);
-        qak_parser parser = qak_parser_init(&mem);
-        qak_ast_node *module = qak_parse(&parser, source, &errors);
+        qak_array_token *tokens = qak_array_token_new(&mem, 16);
+        qak_allocator bump = qak_bump_allocator_init(sizeof(qak_ast_node) * 16);
+        qak_ast_node *module = qak_parse(source, tokens, &errors, &bump);
         qak_errors_print(&errors);
         QAK_CHECK(module, "Expected module, got null pointer.");
 
@@ -121,7 +112,8 @@ void testFunction() {
 
         qak_source_delete(source);
         qak_errors_shutdown(&errors);
-        qak_parser_shutdown(&parser);
+        qak_array_token_delete(tokens);
+        qak_allocator_shutdown(&bump);
         qak_allocator_print(&mem);
         QAK_CHECK(qak_allocator_num_allocated_bytes(&mem) == 0, "Expected no allocated memory.");
     }
@@ -129,8 +121,9 @@ void testFunction() {
     {
         qak_source *source = qak_io_read_source_from_memory(&mem, "function.qak", "module test\nfunction foo(a: int32, b: float, c: double, d: int32): int32\nend");
         qak_errors errors = qak_errors_init(&mem);
-        qak_parser parser = qak_parser_init(&mem);
-        qak_ast_node *module = qak_parse(&parser, source, &errors);
+        qak_array_token *tokens = qak_array_token_new(&mem, 16);
+        qak_allocator bump = qak_bump_allocator_init(sizeof(qak_ast_node) * 16);
+        qak_ast_node *module = qak_parse(source, tokens, &errors, &bump);
         qak_errors_print(&errors);
         QAK_CHECK(module, "Expected module, got null pointer.");
 
@@ -169,10 +162,14 @@ void testFunction() {
 
         qak_source_delete(source);
         qak_errors_shutdown(&errors);
-        qak_parser_shutdown(&parser);
+        qak_array_token_delete(tokens);
+        qak_allocator_shutdown(&bump);
         qak_allocator_print(&mem);
         QAK_CHECK(qak_allocator_num_allocated_bytes(&mem) == 0, "Expected no allocated memory.");
     }
+
+    qak_allocator_print(&mem);
+    QAK_CHECK(qak_allocator_num_allocated_bytes(&mem) == 0, "Parser shutdown didn't deallocate all memory.");
 
     qak_allocator_shutdown(&mem);
     printf("SUCCESS\n");
@@ -185,8 +182,9 @@ void testVariable() {
     {
         qak_source *source = qak_io_read_source_from_memory(&mem, "function.qak", "module test\nvar a");
         qak_errors errors = qak_errors_init(&mem);
-        qak_parser parser = qak_parser_init(&mem);
-        qak_ast_node *module = qak_parse(&parser, source, &errors);
+        qak_array_token *tokens = qak_array_token_new(&mem, 16);
+        qak_allocator bump = qak_bump_allocator_init(sizeof(qak_ast_node) * 16);
+        qak_ast_node *module = qak_parse(source, tokens, &errors, &bump);
         qak_errors_print(&errors);
         QAK_CHECK(module, "Expected module, got null pointer.");
 
@@ -199,7 +197,8 @@ void testVariable() {
 
         qak_source_delete(source);
         qak_errors_shutdown(&errors);
-        qak_parser_shutdown(&parser);
+        qak_array_token_delete(tokens);
+        qak_allocator_shutdown(&bump);
         qak_allocator_print(&mem);
         QAK_CHECK(qak_allocator_num_allocated_bytes(&mem) == 0, "Expected no allocated memory.");
     }
@@ -207,8 +206,9 @@ void testVariable() {
     {
         qak_source *source = qak_io_read_source_from_memory(&mem, "function.qak", "module test\nvar a: int32");
         qak_errors errors = qak_errors_init(&mem);
-        qak_parser parser = qak_parser_init(&mem);
-        qak_ast_node *module = qak_parse(&parser, source, &errors);
+        qak_array_token *tokens = qak_array_token_new(&mem, 16);
+        qak_allocator bump = qak_bump_allocator_init(sizeof(qak_ast_node) * 16);
+        qak_ast_node *module = qak_parse(source, tokens, &errors, &bump);
         qak_errors_print(&errors);
         QAK_CHECK(module, "Expected module, got null pointer.");
 
@@ -222,10 +222,14 @@ void testVariable() {
 
         qak_source_delete(source);
         qak_errors_shutdown(&errors);
-        qak_parser_shutdown(&parser);
+        qak_array_token_delete(tokens);
+        qak_allocator_shutdown(&bump);
         qak_allocator_print(&mem);
         QAK_CHECK(qak_allocator_num_allocated_bytes(&mem) == 0, "Expected no allocated memory.");
     }
+
+    qak_allocator_print(&mem);
+    QAK_CHECK(qak_allocator_num_allocated_bytes(&mem) == 0, "Parser shutdown didn't deallocate all memory.");
 
     qak_allocator_shutdown(&mem);
     printf("SUCCESS\n");
@@ -234,49 +238,64 @@ void testVariable() {
 void testError() {
     printf("========= Test: parser test error expect\n");
     qak_allocator mem = qak_heap_allocator_init();
-    qak_parser parser = qak_parser_init(&mem);
 
     {
         qak_errors errors = qak_errors_init(&mem);
         qak_source *source = qak_io_read_source_from_memory(&mem, "error.qak", "");
-        qak_parse(&parser, source, &errors);
+        qak_array_token *tokens = qak_array_token_new(&mem, 16);
+        qak_allocator bump = qak_bump_allocator_init(sizeof(qak_ast_node) * 16);
+        qak_parse(source, tokens, &errors, &bump);
         QAK_CHECK(errors.errors->size == 1, "Expected an error, got no error.");
         qak_error_print(&errors.errors->items[0]);
         qak_errors_shutdown(&errors);
+        qak_array_token_delete(tokens);
+        qak_allocator_shutdown(&bump);
         qak_source_delete(source);
     }
 
     {
         qak_errors errors = qak_errors_init(&mem);
         qak_source *source = qak_io_read_source_from_memory(&mem, "error.qak", "  \n\t\n");
-        qak_parse(&parser, source, &errors);
+        qak_array_token *tokens = qak_array_token_new(&mem, 16);
+        qak_allocator bump = qak_bump_allocator_init(sizeof(qak_ast_node) * 16);
+        qak_parse(source, tokens, &errors, &bump);
         QAK_CHECK(errors.errors->size == 1, "Expected an error, got no error.");
         qak_error_print(&errors.errors->items[0]);
         qak_errors_shutdown(&errors);
+        qak_array_token_delete(tokens);
+        qak_allocator_shutdown(&bump);
         qak_source_delete(source);
     }
 
     {
         qak_errors errors = qak_errors_init(&mem);
         qak_source *source = qak_io_read_source_from_memory(&mem, "error.qak", "123");
-        qak_parse(&parser, source, &errors);
+        qak_array_token *tokens = qak_array_token_new(&mem, 16);
+        qak_allocator bump = qak_bump_allocator_init(sizeof(qak_ast_node) * 16);
+        qak_parse(source, tokens, &errors, &bump);
         QAK_CHECK(errors.errors->size == 1, "Expected an error, got no error.");
         qak_error_print(&errors.errors->items[0]);
         qak_errors_shutdown(&errors);
+        qak_array_token_delete(tokens);
+        qak_allocator_shutdown(&bump);
         qak_source_delete(source);
     }
 
     {
         qak_errors errors = qak_errors_init(&mem);
         qak_source *source = qak_io_read_source_from_memory(&mem, "error.qak", "module");
-        qak_parse(&parser, source, &errors);
+        qak_array_token *tokens = qak_array_token_new(&mem, 16);
+        qak_allocator bump = qak_bump_allocator_init(sizeof(qak_ast_node) * 16);
+        qak_parse(source, tokens, &errors, &bump);
         QAK_CHECK(errors.errors->size == 1, "Expected an error, got no error.");
         qak_error_print(&errors.errors->items[0]);
         qak_errors_shutdown(&errors);
+        qak_array_token_delete(tokens);
+        qak_allocator_shutdown(&bump);
         qak_source_delete(source);
     }
 
-    qak_parser_shutdown(&parser);
+    qak_allocator_print(&mem);
     QAK_CHECK(qak_allocator_num_allocated_bytes(&mem) == 0, "Parser shutdown didn't deallocate all memory.");
 
     qak_allocator_shutdown(&mem);
@@ -287,10 +306,9 @@ int main(int argc, char **argv) {
     QAK_UNUSED(argc);
     QAK_UNUSED(argv);
 
-    /*testInitShutdown();
     testError();
     testModule();
-    testFunction();*/
+    testFunction();
     testVariable();
     return 0;
 }

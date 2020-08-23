@@ -11,7 +11,7 @@ void qak_errors_print(qak_errors *errors) {
 void qak_error_print(qak_error *error) {
     qak_source *source = error->source;
     qak_source_get_lines(source);
-    qak_line *line = &source->lines->items[error->span.startLine];
+    qak_line *line = &source->lines[error->span.startLine];
 
     printf("Error (%.*s:%i): %.*s\n", (int) source->fileName.length, source->fileName.data, line->lineNumber, (int) error->errorMessage.length,
            error->errorMessage.data);

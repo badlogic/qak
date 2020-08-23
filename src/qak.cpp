@@ -1,4 +1,4 @@
-#include "c/qak.h"
+#include "qak.h"
 #include "io.h"
 #include "parser.h"
 

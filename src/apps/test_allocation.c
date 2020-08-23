@@ -52,19 +52,19 @@ void testHeapAllocator() {
 void testBumpAllocator() {
     qak_allocator bump = qak_bump_allocator_init(16);
 
-    uint8_t *alloc1 = QAK_ALLOCATE(&bump, uint8_t, 8);
+    QAK_ALLOCATE(&bump, uint8_t, 8);
     QAK_CHECK(qak_allocator_num_allocations(&bump) == 1, "Expected 1 allocation.");
     QAK_CHECK(qak_allocator_num_allocated_bytes(&bump) == 8, "Expected 8 allocated bytes");
 
-    uint8_t *alloc2 = QAK_ALLOCATE(&bump, uint8_t, 4);
+    QAK_ALLOCATE(&bump, uint8_t, 4);
     QAK_CHECK(qak_allocator_num_allocations(&bump) == 1, "Expected 1 allocation.");
     QAK_CHECK(qak_allocator_num_allocated_bytes(&bump) == 12, "Expected 12 allocated bytes");
 
-    uint8_t *alloc3 = QAK_ALLOCATE(&bump, uint8_t, 4);
+    QAK_ALLOCATE(&bump, uint8_t, 4);
     QAK_CHECK(qak_allocator_num_allocations(&bump) == 1, "Expected 1 allocation.");
     QAK_CHECK(qak_allocator_num_allocated_bytes(&bump) == 16, "Expected 16 allocated bytes");
 
-    uint8_t *alloc4 = QAK_ALLOCATE(&bump, uint8_t, 32);
+    QAK_ALLOCATE(&bump, uint8_t, 32);
     QAK_CHECK(qak_allocator_num_allocations(&bump) == 2, "Expected 1 allocation.");
     QAK_CHECK(qak_allocator_num_allocated_bytes(&bump) == 48, "Expected 48 allocated bytes");
 

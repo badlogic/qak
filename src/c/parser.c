@@ -3,8 +3,24 @@
 #include "tokenizer.h"
 #include "error.h"
 
-QAK_INLINE void token_stream_init(qak_allocator *allocator, qak_token_stream *stream, qak_source *source, qak_array_token *tokens, qak_errors *errors) {
-    stream->allocator = allocator;
+QAK_ARRAY_IMPLEMENT_INLINE(qak_array_line, qak_line)
+
+typedef struct qak_token_stream {
+    qak_source *source;
+    qak_array_token *tokens;
+    qak_errors *errors;
+    size_t index;
+} qak_token_stream;
+
+typedef struct qak_parser {
+    qak_token_stream stream;
+    qak_source *source;
+    qak_errors *errors;
+    qak_array_token *tokens;
+    qak_allocator *nodeAllocator;
+} qak_parser;
+
+QAK_INLINE void token_stream_init(qak_token_stream *stream, qak_source *source, qak_array_token *tokens, qak_errors *errors) {
     stream->source = source;
     stream->tokens = tokens;
     stream->errors = errors;
@@ -22,7 +38,7 @@ QAK_INLINE qak_token *consume(qak_token_stream *stream) {
     return &stream->tokens->items[stream->index++];
 }
 
-/* Returnst he next token or null, without advancing the stream. */
+/* Returns the next token or null, without advancing the stream. */
 QAK_INLINE qak_token *peek(qak_token_stream *stream) {
     if (!has_more(stream)) return NULL;
     return &stream->tokens->items[stream->index];
@@ -56,8 +72,8 @@ QAK_INLINE qak_token *expect(qak_token_stream *stream, qak_token_type type) {
         qak_token *lastToken = stream->index < stream->tokens->size ? &stream->tokens->items[stream->index] : NULL;
 
         if (lastToken == NULL) {
-            qak_array_line *lines = qak_source_get_lines(stream->source);
-            qak_line *lastLine = &lines->items[lines->size - 1];
+            qak_source_get_lines(stream->source);
+            qak_line *lastLine = &stream->source->lines[stream->source->numLines - 1];
             qak_span span = (qak_span) {lastLine->data, lastLine->lineNumber, lastLine->lineNumber};
             const char *typeString = qak_token_type_to_string(type);
             qak_errors_add(stream->errors, stream->source, span, "Expected '%s', but reached the end of the source.", typeString);
@@ -80,8 +96,8 @@ QAK_INLINE qak_token *expect_string(qak_token_stream *stream, const char *text, 
         qak_token *lastToken = stream->index < stream->tokens->size ? &stream->tokens->items[stream->index] : NULL;
 
         if (lastToken == NULL) {
-            qak_array_line *lines = qak_source_get_lines(stream->source);
-            qak_line *lastLine = &lines->items[lines->size - 1];
+            qak_source_get_lines(stream->source);
+            qak_line *lastLine = &stream->source->lines[stream->source->numLines - 1];
             qak_span span = (qak_span) {lastLine->data, lastLine->lineNumber, lastLine->lineNumber};
             qak_errors_add(stream->errors, stream->source, span, "Expected '%.*s', but reached the end of the source.", len, text);
         } else {
@@ -94,23 +110,8 @@ QAK_INLINE qak_token *expect_string(qak_token_stream *stream, const char *text, 
     }
 }
 
-qak_parser qak_parser_init(qak_allocator *allocator) {
-    qak_parser parser;
-    parser.allocator = allocator;
-    parser.nodes = qak_array_ast_node_new(allocator, 16);
-    parser.tokens = qak_array_token_new(allocator, 16);
-    return parser;
-}
-
-void qak_parser_shutdown(qak_parser *parser) {
-    qak_array_ast_node_delete(parser->nodes);
-    qak_array_token_delete(parser->tokens);
-}
-
 QAK_INLINE qak_ast_node *new_ast_node(qak_parser *parser, qak_ast_type type, qak_span *span) {
-    // BOZO use bump allocator tied to module
-    qak_array_ast_node_set_size(parser->nodes, parser->nodes->size + 1);
-    qak_ast_node *node = &parser->nodes->items[parser->nodes->size - 1];
+    qak_ast_node *node = QAK_ALLOCATE(parser->nodeAllocator, qak_ast_node, 1);
     node->type = type;
     node->span = *span;
     node->next = NULL;
@@ -118,9 +119,7 @@ QAK_INLINE qak_ast_node *new_ast_node(qak_parser *parser, qak_ast_type type, qak
 }
 
 QAK_INLINE qak_ast_node *new_ast_node_2(qak_parser *parser, qak_ast_type type, qak_span *start, qak_span *end) {
-    // BOZO use bump allocator tied to module
-    qak_array_ast_node_set_size(parser->nodes, parser->nodes->size + 1);
-    qak_ast_node *node = &parser->nodes->items[parser->nodes->size - 1];
+    qak_ast_node *node = QAK_ALLOCATE(parser->nodeAllocator, qak_ast_node, 1);
     node->type = type;
     node->span.data = start->data;
     node->span.data.length = end->data.data - start->data.data;
@@ -319,26 +318,30 @@ qak_ast_node *parse_statement(qak_parser *parser) {
     }
 }
 
-qak_ast_node *qak_parse(qak_parser *parser, qak_source *source, qak_errors *errors) {
-    parser->source = source;
-    parser->errors = errors;
+qak_ast_node *qak_parse(qak_source *source, qak_array_token *tokens, qak_errors *errors, qak_allocator *nodeAllocator) {
+    qak_parser parser;
+    parser.source = source;
+    parser.tokens = tokens;
+    parser.errors = errors;
+    parser.nodeAllocator = nodeAllocator;
+    token_stream_init(&parser.stream, source, tokens, errors);
 
-    qak_array_token_clear(parser->tokens);
-    qak_tokenize(source, parser->tokens, errors);
+    qak_array_token_clear(parser.tokens);
+    qak_tokenize(source, parser.tokens, errors);
     if (errors->errors->size) return NULL;
-    token_stream_init(parser->allocator, &parser->stream, source, parser->tokens, errors);
+    token_stream_init(&parser.stream, source, tokens, errors);
 
-    qak_ast_node *module = parse_module(parser);
+    qak_ast_node *module = parse_module(&parser);
     if (!module) return NULL;
 
-    qak_token_stream *stream = &parser->stream;
+    qak_token_stream *stream = &parser.stream;
     qak_ast_node* lastFunction = NULL;
     uint32_t numFunctions = 0;
     qak_ast_node* lastStatement = NULL;
     uint32_t numStatements = 0;
     while (has_more(stream)) {
         if (match_string(stream, QAK_STR("function"), true)) {
-            qak_ast_node *function = parse_function(parser);
+            qak_ast_node *function = parse_function(&parser);
             if (!function) return NULL;
 
             if (!module->data.module.functions) {
@@ -350,7 +353,7 @@ qak_ast_node *qak_parse(qak_parser *parser, qak_source *source, qak_errors *erro
             }
             numFunctions++;
         } else {
-            qak_ast_node *statement = parse_statement(parser);
+            qak_ast_node *statement = parse_statement(&parser);
             if (!statement) return NULL;
 
             if (!module->data.module.statements) {

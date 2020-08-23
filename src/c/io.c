@@ -8,6 +8,8 @@
 
 #include <stdio.h>
 
+QAK_ARRAY_IMPLEMENT_INLINE(qak_array_line, qak_line)
+
 qak_source *qak_io_read_source_from_file(qak_allocator *allocator, const char *fileName) {
     FILE *file = fopen(fileName, "rb");
     if (file == NULL) {
@@ -27,7 +29,7 @@ qak_source *qak_io_read_source_from_file(qak_allocator *allocator, const char *f
     char *fileNameCopy = QAK_ALLOCATE(allocator, char, fileNameLength);
     memcpy(fileNameCopy, fileName, fileNameLength);
     qak_source *source = QAK_ALLOCATE(allocator, qak_source, 1);
-    *source = (qak_source) {allocator, {(char *) data, size}, {fileNameCopy, fileNameLength - 1}, qak_array_line_new(allocator, 16)};
+    *source = (qak_source) {allocator, {(char *) data, size}, {fileNameCopy, fileNameLength - 1}, NULL, 0};
     return source;
 }
 
@@ -40,37 +42,41 @@ qak_source *qak_io_read_source_from_memory(qak_allocator *allocator, const char 
     char *fileNameCopy = QAK_ALLOCATE(allocator, char, fileNameLength);
     memcpy(fileNameCopy, fileName, fileNameLength);
     qak_source *source = QAK_ALLOCATE(allocator, qak_source, 1);
-    *source = (qak_source) {allocator, {(char *) data, size - 1}, {fileNameCopy, fileNameLength - 1}, qak_array_line_new(allocator, 16)};
+    *source = (qak_source) {allocator, {(char *) data, size - 1}, {fileNameCopy, fileNameLength - 1}, NULL, 0};
     return source;
 }
 
 void qak_source_delete(qak_source *source) {
     QAK_FREE(source->allocator, source->data.data);
     QAK_FREE(source->allocator, source->fileName.data);
-    qak_array_line_delete(source->lines);
+    if (source->lines != NULL) QAK_FREE(source->allocator, source->lines);
     QAK_FREE(source->allocator, source);
 }
 
-qak_array_line *qak_source_get_lines(qak_source *source) {
-    if (source->lines->size != 0) return source->lines;
-    qak_array_line_add(source->lines, (qak_line) {{0}, 0});
+void qak_source_get_lines(qak_source *source) {
+    if (source->lines != NULL) return;
+
+    qak_array_line *lines = qak_array_line_new(source->allocator, 16);
+    qak_array_line_add(lines, (qak_line) {{0}, 0});
 
     uint32_t lineStart = 0;
     char *data = source->data.data;
     for (size_t i = 0, n = source->data.length; i < n; i++) {
         uint8_t c = data[i];
         if (c == '\n') {
-            qak_line line = {{data + lineStart, i - lineStart}, (uint32_t) source->lines->size};
-            qak_array_line_add(source->lines, line);
+            qak_line line = {{data + lineStart, i - lineStart}, (uint32_t) lines->size};
+            qak_array_line_add(lines, line);
             lineStart = (uint32_t) i + 1;
         }
     }
 
     if (lineStart < source->data.length) {
-        qak_array_line_add(source->lines, (qak_line) {{data + lineStart, source->data.length - lineStart}, source->lines->size});
+        qak_array_line_add(lines, (qak_line) {{data + lineStart, source->data.length - lineStart}, lines->size});
     }
 
-    return source->lines;
+    source->lines = lines->items;
+    source->numLines = lines->size;
+    QAK_FREE(source->allocator, lines);
 }
 
 double qak_io_time_millis() {
