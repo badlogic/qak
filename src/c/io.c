@@ -21,7 +21,8 @@ qak_source *qak_io_read_source_from_file(qak_allocator *allocator, const char *f
     size_t size = ftell(file);
     fseek(file, 0L, SEEK_SET);
 
-    uint8_t *data = QAK_ALLOCATE(allocator, uint8_t, size);
+    uint8_t *data = QAK_ALLOCATE(allocator, uint8_t, size + 1);
+    data[size] = 0;
     fread(data, sizeof(uint8_t), size, file);
     fclose(file);
 
@@ -36,6 +37,7 @@ qak_source *qak_io_read_source_from_file(qak_allocator *allocator, const char *f
 qak_source *qak_io_read_source_from_memory(qak_allocator *allocator, const char *fileName, const char *sourceCode) {
     size_t size = strlen(sourceCode) + 1;
     uint8_t *data = QAK_ALLOCATE(allocator, uint8_t, size);
+    data[size - 1] = 0;
     memcpy(data, sourceCode, size);
 
     size_t fileNameLength = strlen(fileName) + 1;

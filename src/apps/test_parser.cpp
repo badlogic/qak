@@ -73,7 +73,8 @@ void testExpression() {
     }
 
     if (mem.numAllocations() != 0) mem.printAllocations();
-    QAK_CHECK(mem.numAllocations() == 0, "Expected all memory to be deallocated, but %zu allocations remaining.", mem.numAllocations());
+    QAK_CHECK(mem.numAllocations() == 0, "Expected all memory to be deallocated, but %zu allocations remaining.",
+              mem.numAllocations());
 }
 
 void testModuleVariable() {
@@ -135,7 +136,8 @@ void testV01() {
     }
 
     if (mem.numAllocations() != 0) mem.printAllocations();
-    QAK_CHECK(mem.numAllocations() == 0, "Expected all memory to be deallocated, but %zu allocations remaining.", mem.numAllocations());
+    QAK_CHECK(mem.numAllocations() == 0, "Expected all memory to be deallocated, but %zu allocations remaining.",
+              mem.numAllocations());
 }
 
 void testEOL() {

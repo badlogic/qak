@@ -37,7 +37,8 @@ struct Module {
     Array<qak_ast_node> *astNodes;
     Errors errors;
 
-    Module(HeapAllocator &mem, BumpAllocator *bumpMem, Source *source, Array<Token> &tokens, ast::Module *astModule, Errors &errors) :
+    Module(HeapAllocator &mem, BumpAllocator *bumpMem, Source *source, Array<Token> &tokens, ast::Module *astModule,
+           Errors &errors) :
             mem(mem), bumpMem(bumpMem),
             source(source),
             tokens(mem),
@@ -60,128 +61,128 @@ struct Module {
         mem.freeObject(source, QAK_SRC_LOC);
     }
 
- /*   qak_ast_node_index linearizeAst() {
-        if (astNodes == nullptr) {
-            astNodes = mem.allocObject<Array<qak_ast_node>>(QAK_SRC_LOC, mem);
-            return linearizeAst(*astNodes, astModule);
-        } else {
-            return ((qak_ast_node_index) astNodes->size()) - 1;
-        }
-    }
+    /*   qak_ast_node_index linearizeAst() {
+           if (astNodes == nullptr) {
+               astNodes = mem.allocObject<Array<qak_ast_node>>(QAK_SRC_LOC, mem);
+               return linearizeAst(*astNodes, astModule);
+           } else {
+               return ((qak_ast_node_index) astNodes->size()) - 1;
+           }
+       }
 
-    template<typename T>
-    void fixedAstNodeArrayToQakAstNodeList(Array<qak_ast_node> &nodes, FixedArray<T *> &array, qak_ast_node_list &list) {
-        list.numNodes = (qak_ast_node_index) array.size();
-        if (list.numNodes > 0) {
-            list.nodes = bumpMem->alloc<qak_ast_node_index>(list.numNodes);
-            for (size_t i = 0; i < list.numNodes; i++) {
-                list.nodes[i] = linearizeAst(nodes, array[i]);
-            }
-        }
-    }
+       template<typename T>
+       void fixedAstNodeArrayToQakAstNodeList(Array<qak_ast_node> &nodes, FixedArray<T *> &array, qak_ast_node_list &list) {
+           list.numNodes = (qak_ast_node_index) array.size();
+           if (list.numNodes > 0) {
+               list.nodes = bumpMem->alloc<qak_ast_node_index>(list.numNodes);
+               for (size_t i = 0; i < list.numNodes; i++) {
+                   list.nodes[i] = linearizeAst(nodes, array[i]);
+               }
+           }
+       }
 
-    qak_ast_node_index linearizeAst(Array<qak_ast_node> &nodes, qak::ast::AstNode *node) {
-        if (node == nullptr) return -1;
+       qak_ast_node_index linearizeAst(Array<qak_ast_node> &nodes, qak::ast::AstNode *node) {
+           if (node == nullptr) return -1;
 
-        qak_ast_node astNode;
-        astNode.type = (qak_ast_type) node->astType;
-        spanToQakSpan(node->span, astNode.span);
+           qak_ast_node astNode;
+           astNode.type = (qak_ast_type) node->astType;
+           spanToQakSpan(node->span, astNode.span);
 
-        switch (node->astType) {
-            case qak::ast::AstTypeSpecifier: {
-                qak::ast::TypeSpecifier *n = (qak::ast::TypeSpecifier *) (node);
-                spanToQakSpan(n->name, astNode.data.typeSpecifier.name);
-                break;
-            }
-            case qak::ast::AstParameter: {
-                qak::ast::Parameter *n = (qak::ast::Parameter *) (node);
-                spanToQakSpan(n->name, astNode.data.parameter.name);
-                astNode.data.parameter.typeSpecifier = linearizeAst(nodes, n->typeSpecifier);
-                break;
-            }
-            case qak::ast::AstFunction: {
-                qak::ast::Function *n = (qak::ast::Function *) (node);
-                spanToQakSpan(n->name, astNode.data.function.name);
-                fixedAstNodeArrayToQakAstNodeList(nodes, n->parameters, astNode.data.function.parameters);
-                astNode.data.function.returnType = linearizeAst(nodes, n->returnType);
-                fixedAstNodeArrayToQakAstNodeList(nodes, n->statements, astNode.data.function.statements);
-                break;
-            }
-            case qak::ast::AstTernaryOperation: {
-                qak::ast::TernaryOperation *n = (qak::ast::TernaryOperation *) (node);
-                astNode.data.ternaryOperation.condition = linearizeAst(nodes, n->condition);
-                astNode.data.ternaryOperation.trueValue = linearizeAst(nodes, n->trueValue);
-                astNode.data.ternaryOperation.falseValue = linearizeAst(nodes, n->falseValue);
-                break;
-            }
-            case qak::ast::AstBinaryOperation: {
-                qak::ast::BinaryOperation *n = (qak::ast::BinaryOperation *) (node);
-                spanToQakSpan(n->op, astNode.data.binaryOperation.op);
-                astNode.data.binaryOperation.left = linearizeAst(nodes, n->left);
-                astNode.data.binaryOperation.right = linearizeAst(nodes, n->right);
-                break;
-            }
-            case qak::ast::AstUnaryOperation: {
-                qak::ast::UnaryOperation *n = (qak::ast::UnaryOperation *) (node);
-                spanToQakSpan(n->op, astNode.data.unaryOperation.op);
-                astNode.data.unaryOperation.value = linearizeAst(nodes, n->value);
-                break;
-            }
-            case qak::ast::AstLiteral: {
-                qak::ast::Literal *n = (qak::ast::Literal *) (node);
-                astNode.data.literal.type = (qak_token_type) n->type;
-                spanToQakSpan(n->value, astNode.data.literal.value);
-                break;
-            }
-            case qak::ast::AstVariableAccess: {
-                qak::ast::VariableAccess *n = (qak::ast::VariableAccess *) (node);
-                spanToQakSpan(n->name, astNode.data.variableAccess.name);
-                break;
-            }
-            case qak::ast::AstFunctionCall: {
-                qak::ast::FunctionCall *n = (qak::ast::FunctionCall *) (node);
-                astNode.data.functionCall.variableAccess = linearizeAst(nodes, n->variableAccess);
-                fixedAstNodeArrayToQakAstNodeList(nodes, n->arguments, astNode.data.functionCall.arguments);
-                break;
-            }
-            case qak::ast::AstVariable: {
-                qak::ast::Variable *n = (qak::ast::Variable *) (node);
-                spanToQakSpan(n->name, astNode.data.variable.name);
-                astNode.data.variable.typeSpecifier = linearizeAst(nodes, n->typeSpecifier);
-                astNode.data.variable.initializerExpression = linearizeAst(nodes, n->initializerExpression);
-                break;
-            }
-            case qak::ast::AstWhile: {
-                qak::ast::While *n = (qak::ast::While *) (node);
-                astNode.data.whileNode.condition = linearizeAst(nodes, n->condition);
-                fixedAstNodeArrayToQakAstNodeList(nodes, n->statements, astNode.data.whileNode.statements);
-                break;
-            }
-            case qak::ast::AstIf: {
-                qak::ast::If *n = (qak::ast::If *) (node);
-                astNode.data.ifNode.condition = linearizeAst(nodes, n->condition);
-                fixedAstNodeArrayToQakAstNodeList(nodes, n->trueBlock, astNode.data.ifNode.trueBlock);
-                fixedAstNodeArrayToQakAstNodeList(nodes, n->falseBlock, astNode.data.ifNode.falseBlock);
-                break;
-            }
-            case qak::ast::AstReturn: {
-                qak::ast::Return *n = (qak::ast::Return *) (node);
-                astNode.data.returnNode.returnValue = linearizeAst(nodes, n->returnValue);
-                break;
-            }
-            case qak::ast::AstModule: {
-                qak::ast::Module *n = (qak::ast::Module *) (node);
-                spanToQakSpan(n->name, astNode.data.module.name);
-                fixedAstNodeArrayToQakAstNodeList(nodes, n->variables, astNode.data.module.variables);
-                fixedAstNodeArrayToQakAstNodeList(nodes, n->functions, astNode.data.module.functions);
-                fixedAstNodeArrayToQakAstNodeList(nodes, n->statements, astNode.data.module.statements);
-                break;
-            }
-        }
+           switch (node->astType) {
+               case qak::ast::AstTypeSpecifier: {
+                   qak::ast::TypeSpecifier *n = (qak::ast::TypeSpecifier *) (node);
+                   spanToQakSpan(n->name, astNode.data.typeSpecifier.name);
+                   break;
+               }
+               case qak::ast::AstParameter: {
+                   qak::ast::Parameter *n = (qak::ast::Parameter *) (node);
+                   spanToQakSpan(n->name, astNode.data.parameter.name);
+                   astNode.data.parameter.typeSpecifier = linearizeAst(nodes, n->typeSpecifier);
+                   break;
+               }
+               case qak::ast::AstFunction: {
+                   qak::ast::Function *n = (qak::ast::Function *) (node);
+                   spanToQakSpan(n->name, astNode.data.function.name);
+                   fixedAstNodeArrayToQakAstNodeList(nodes, n->parameters, astNode.data.function.parameters);
+                   astNode.data.function.returnType = linearizeAst(nodes, n->returnType);
+                   fixedAstNodeArrayToQakAstNodeList(nodes, n->statements, astNode.data.function.statements);
+                   break;
+               }
+               case qak::ast::AstTernaryOperation: {
+                   qak::ast::TernaryOperation *n = (qak::ast::TernaryOperation *) (node);
+                   astNode.data.ternaryOperation.condition = linearizeAst(nodes, n->condition);
+                   astNode.data.ternaryOperation.trueValue = linearizeAst(nodes, n->trueValue);
+                   astNode.data.ternaryOperation.falseValue = linearizeAst(nodes, n->falseValue);
+                   break;
+               }
+               case qak::ast::AstBinaryOperation: {
+                   qak::ast::BinaryOperation *n = (qak::ast::BinaryOperation *) (node);
+                   spanToQakSpan(n->op, astNode.data.binaryOperation.op);
+                   astNode.data.binaryOperation.left = linearizeAst(nodes, n->left);
+                   astNode.data.binaryOperation.right = linearizeAst(nodes, n->right);
+                   break;
+               }
+               case qak::ast::AstUnaryOperation: {
+                   qak::ast::UnaryOperation *n = (qak::ast::UnaryOperation *) (node);
+                   spanToQakSpan(n->op, astNode.data.unaryOperation.op);
+                   astNode.data.unaryOperation.value = linearizeAst(nodes, n->value);
+                   break;
+               }
+               case qak::ast::AstLiteral: {
+                   qak::ast::Literal *n = (qak::ast::Literal *) (node);
+                   astNode.data.literal.type = (qak_token_type) n->type;
+                   spanToQakSpan(n->value, astNode.data.literal.value);
+                   break;
+               }
+               case qak::ast::AstVariableAccess: {
+                   qak::ast::VariableAccess *n = (qak::ast::VariableAccess *) (node);
+                   spanToQakSpan(n->name, astNode.data.variableAccess.name);
+                   break;
+               }
+               case qak::ast::AstFunctionCall: {
+                   qak::ast::FunctionCall *n = (qak::ast::FunctionCall *) (node);
+                   astNode.data.functionCall.variableAccess = linearizeAst(nodes, n->variableAccess);
+                   fixedAstNodeArrayToQakAstNodeList(nodes, n->arguments, astNode.data.functionCall.arguments);
+                   break;
+               }
+               case qak::ast::AstVariable: {
+                   qak::ast::Variable *n = (qak::ast::Variable *) (node);
+                   spanToQakSpan(n->name, astNode.data.variable.name);
+                   astNode.data.variable.typeSpecifier = linearizeAst(nodes, n->typeSpecifier);
+                   astNode.data.variable.initializerExpression = linearizeAst(nodes, n->initializerExpression);
+                   break;
+               }
+               case qak::ast::AstWhile: {
+                   qak::ast::While *n = (qak::ast::While *) (node);
+                   astNode.data.whileNode.condition = linearizeAst(nodes, n->condition);
+                   fixedAstNodeArrayToQakAstNodeList(nodes, n->statements, astNode.data.whileNode.statements);
+                   break;
+               }
+               case qak::ast::AstIf: {
+                   qak::ast::If *n = (qak::ast::If *) (node);
+                   astNode.data.ifNode.condition = linearizeAst(nodes, n->condition);
+                   fixedAstNodeArrayToQakAstNodeList(nodes, n->trueBlock, astNode.data.ifNode.trueBlock);
+                   fixedAstNodeArrayToQakAstNodeList(nodes, n->falseBlock, astNode.data.ifNode.falseBlock);
+                   break;
+               }
+               case qak::ast::AstReturn: {
+                   qak::ast::Return *n = (qak::ast::Return *) (node);
+                   astNode.data.returnNode.returnValue = linearizeAst(nodes, n->returnValue);
+                   break;
+               }
+               case qak::ast::AstModule: {
+                   qak::ast::Module *n = (qak::ast::Module *) (node);
+                   spanToQakSpan(n->name, astNode.data.module.name);
+                   fixedAstNodeArrayToQakAstNodeList(nodes, n->variables, astNode.data.module.variables);
+                   fixedAstNodeArrayToQakAstNodeList(nodes, n->functions, astNode.data.module.functions);
+                   fixedAstNodeArrayToQakAstNodeList(nodes, n->statements, astNode.data.module.statements);
+                   break;
+               }
+           }
 
-        nodes.add(astNode);
-        return ((qak_ast_node_index) nodes.size()) - 1;
-    }*/
+           nodes.add(astNode);
+           return ((qak_ast_node_index) nodes.size()) - 1;
+       }*/
 };
 
 EMSCRIPTEN_KEEPALIVE qak_compiler qak_compiler_new() {
@@ -210,16 +211,19 @@ qak_module qak_compile(Compiler *compiler, Source *source) {
 
     qak::tokenizer::tokenize(*source, tokens, errors);
     if (errors.hasErrors()) {
-        return (qak_module) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens, nullptr, errors);;
+        return (qak_module) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens,
+                                                               nullptr, errors);;
     }
 
     qak::Parser parser(*compiler->mem);
     ast::Module *astModule = parser.parse(*source, errors, bumpMem);
     if (astModule == nullptr) {
-        return (qak_module) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens, nullptr, errors);;
+        return (qak_module) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens,
+                                                               nullptr, errors);;
     }
 
-    return (qak_module) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens, astModule, errors);
+    return (qak_module) compiler->mem->allocObject<Module>(QAK_SRC_LOC, *compiler->mem, bumpMem, source, tokens,
+                                                           astModule, errors);
 }
 
 EMSCRIPTEN_KEEPALIVE qak_module qak_compiler_compile_file(qak_compiler compilerHandle, const char *fileName) {
@@ -229,7 +233,8 @@ EMSCRIPTEN_KEEPALIVE qak_module qak_compiler_compile_file(qak_compiler compilerH
     return qak_compile(compiler, source);
 }
 
-EMSCRIPTEN_KEEPALIVE qak_module qak_compiler_compile_source(qak_compiler compilerHandle, const char *fileName, const char *sourceData) {
+EMSCRIPTEN_KEEPALIVE qak_module
+qak_compiler_compile_source(qak_compiler compilerHandle, const char *fileName, const char *sourceData) {
     Compiler *compiler = (Compiler *) compilerHandle;
     HeapAllocator &mem = *compiler->mem;
 

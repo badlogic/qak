@@ -3,14 +3,22 @@
 #include "error.h"
 
 static const uint32_t literalToTokenType[] = {
-        27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 25 /* ! */, 27, 27,
-        27, 8 /* % */, 22 /* & */, 27, 9 /* ( */, 10 /* ) */, 6 /* * */, 4 /* + */, 1 /* , */, 5 /* - */, 0 /* . */, 7 /* / */, 27, 27, 27, 27, 27, 27, 27, 27,
-        27, 27, 3 /* : */, 2 /* ; */, 19 /* < */, 21 /* = */, 20 /* > */, 26 /* ? */, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
-        27, 27, 27, 27, 27, 27, 27, 27, 27, 11 /* [ */, 27, 12 /* ] */, 24 /* ^ */, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
-        27, 27, 27, 27, 27, 27, 27, 27, 27, 13 /* { */, 23 /* | */, 14 /* } */, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
-        27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
-        27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
-        27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27
+        27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 25 /* ! */, 27, 27,
+        27, 8 /* % */, 22 /* & */, 27, 9 /* ( */, 10 /* ) */, 6 /* * */, 4 /* + */, 1 /* , */, 5 /* - */, 0 /* . */,
+        7 /* / */, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 3 /* : */, 2 /* ; */, 19 /* < */, 21 /* = */, 20 /* > */, 26 /* ? */, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27, 27, 27, 27, 11 /* [ */, 27, 12 /* ] */, 24 /* ^ */, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27, 27, 27, 27, 13 /* { */, 23 /* | */, 14 /* } */, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+        27, 27, 27, 27, 27, 27
 };
 
 const char *qak_token_type_to_string(qak_token_type type) {
@@ -121,7 +129,7 @@ QAK_INLINE void stream_init(qak_character_stream *stream, qak_source *source) {
     stream->source = source;
     stream->index = 0;
     stream->line = 1;
-    stream->end = (uint32_t)source->data.length;
+    stream->end = (uint32_t) source->data.length;
     stream->spanStart = 0;
     stream->spanLineStart = 0;
 }
@@ -166,7 +174,7 @@ QAK_INLINE bool match(qak_character_stream *stream, const char *needleData, bool
     uint32_t needleLength = 0;
     const char *sourceData = stream->source->data.data;
     for (uint32_t i = 0, j = stream->index; needleData[i] != 0; i++, needleLength++) {
-        if (stream->index >= stream->end) return false;
+        if (j >= stream->end) return false;
         uint32_t c = next_utf8_character(sourceData, &j);
         if ((unsigned char) needleData[i] != c) return false;
     }
@@ -415,10 +423,12 @@ void qak_tokenize(qak_source *source, qak_array_token *tokens, qak_errors *error
                 consume(&stream);
                 switch (type) {
                     case QakTokenLess:
-                        qak_array_token_add(tokens, (qak_token) {(qak_token_type) QakTokenLessEqual, end_span(&stream)});
+                        qak_array_token_add(tokens,
+                                            (qak_token) {(qak_token_type) QakTokenLessEqual, end_span(&stream)});
                         break;
                     case QakTokenGreater:
-                        qak_array_token_add(tokens, (qak_token) {(qak_token_type) QakTokenGreaterEqual, end_span(&stream)});
+                        qak_array_token_add(tokens,
+                                            (qak_token) {(qak_token_type) QakTokenGreaterEqual, end_span(&stream)});
                         break;
                     case QakTokenNot:
                         qak_array_token_add(tokens, (qak_token) {(qak_token_type) QakTokenNotEqual, end_span(&stream)});

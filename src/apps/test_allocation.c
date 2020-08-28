@@ -1,6 +1,7 @@
 #include "c/allocation.h"
 #include "test.h"
 #include <string.h>
+#include <zconf.h>
 
 void testHeapAllocator() {
     qak_allocator mem = qak_heap_allocator_init();
@@ -9,17 +10,19 @@ void testHeapAllocator() {
     QAK_CHECK(alloc1, "Couldn't allocate array.");
     qak_heap_allocation_header *header = (qak_heap_allocation_header *) (alloc1 - sizeof(qak_heap_allocation_header));
     QAK_CHECK(header->numBytes == 16, "Incorrect size in allocation header.");
-    QAK_CHECK(!strcmp(header->sourceFile + strlen(header->sourceFile) - strlen("test_allocation.c"), "test_allocation.c"),
-              "Incorrect source file in allocation header.");
-    QAK_CHECK(header->line == 8, "Incorrect line in allocation header.");
+    QAK_CHECK(
+            !strcmp(header->sourceFile + strlen(header->sourceFile) - strlen("test_allocation.c"), "test_allocation.c"),
+            "Incorrect source file in allocation header.");
+    QAK_CHECK(header->line == 9, "Incorrect line in allocation header.");
 
     alloc1 = QAK_REALLOCATE(&mem, alloc1, uint8_t, 1);
     QAK_CHECK(alloc1, "Couldn't allocate array.");
     header = (qak_heap_allocation_header *) (alloc1 - sizeof(qak_heap_allocation_header));
     QAK_CHECK(header->numBytes == 1, "Incorrect size in allocation header.");
-    QAK_CHECK(!strcmp(header->sourceFile + strlen(header->sourceFile) - strlen("test_allocation.c"), "test_allocation.c"),
-              "Incorrect source file in allocation header.");
-    QAK_CHECK(header->line == 16, "Incorrect line in allocation header.");
+    QAK_CHECK(
+            !strcmp(header->sourceFile + strlen(header->sourceFile) - strlen("test_allocation.c"), "test_allocation.c"),
+            "Incorrect source file in allocation header.");
+    QAK_CHECK(header->line == 17, "Incorrect line in allocation header.");
 
     uint8_t *alloc2 = QAK_ALLOCATE(&mem, uint8_t, 2);
     uint8_t *alloc3 = QAK_ALLOCATE(&mem, uint8_t, 3);
@@ -72,6 +75,7 @@ void testBumpAllocator() {
 }
 
 int main(int argc, char **argv) {
+
     QAK_UNUSED(argc);
     QAK_UNUSED(argv);
 

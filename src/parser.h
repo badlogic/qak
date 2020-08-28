@@ -173,7 +173,8 @@ namespace qak {
             Expression *variableAccess;
             FixedArray<Expression *> arguments;
 
-            FunctionCall(BumpAllocator &mem, Span start, Span end, Expression *variableAccess, Array<Expression *> &arguments) :
+            FunctionCall(BumpAllocator &mem, Span start, Span end, Expression *variableAccess,
+                         Array<Expression *> &arguments) :
                     Expression(AstFunctionCall, start, end),
                     variableAccess(variableAccess),
                     arguments(mem, arguments) {}

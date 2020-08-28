@@ -340,7 +340,8 @@ Expression *Parser::parseAccessOrCallOrLiteral() {
             Token token = _stream->getTokens()[_stream->getTokens().size() - 1];
             _errors->add(token, "Expected a variable, field, array, function call, method call, or literal.");
         } else {
-            _errors->add(Span(*_source, 0, 0, 0, 0), "Expected a variable, field, array, function call, method call, or literal.");
+            _errors->add(Span(*_source, 0, 0, 0, 0),
+                         "Expected a variable, field, array, function call, method call, or literal.");
         }
         return nullptr;
     }
@@ -367,7 +368,8 @@ Expression *Parser::parseAccessOrCallOrLiteral() {
             return parseAccessOrCall();
 
         default:
-            _errors->add(*_stream->peek(), "Expected a variable, field, array, function call, method call, or literal.");
+            _errors->add(*_stream->peek(),
+                         "Expected a variable, field, array, function call, method call, or literal.");
             return nullptr;
     }
 }
@@ -568,7 +570,8 @@ static void printAstNodeRecursive(ast::AstNode *node, int indent, HeapAllocator 
         case AstFunctionCall: {
             FunctionCall *n = (FunctionCall *) node;
             printIndent(indent);
-            printf("Function call: %s(%s)\n", n->variableAccess->span.toCString(mem), n->arguments.size() > 0 ? "..." : "");
+            printf("Function call: %s(%s)\n", n->variableAccess->span.toCString(mem),
+                   n->arguments.size() > 0 ? "..." : "");
 
             if (n->arguments.size() > 0) {
                 printIndent(indent + QAK_AST_INDENT);

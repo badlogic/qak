@@ -151,12 +151,14 @@ typedef struct qak_ast_ternary_operation {
 
 typedef struct qak_ast_binary_operation {
     qak_span op;
+    qak_token_type opType;
     struct qak_ast_node *left;
     struct qak_ast_node *right;
 } qak_ast_binary_operation;
 
 typedef struct qak_ast_unary_operation {
     qak_span op;
+    qak_token_type opType;
     struct qak_ast_node *value;
 } qak_ast_unary_operation;
 
@@ -224,7 +226,7 @@ typedef struct qak_module {
     qak_allocator bumpMem;
     qak_array_token *tokens;
     qak_errors errors;
-    struct qak_ast_node *astModule;
+    struct qak_ast_node *ast;
 } qak_module;
 
 /** Compiler **/
@@ -251,7 +253,7 @@ void qak_module_print_tokens(qak_module *module);
 
 struct qak_ast_node *qak_module_get_ast(qak_module *module);
 
-void qak_module_print_ast(qak_module *module);
+void qak_module_print_ast(qak_ast_node *moduleAst);
 
 #ifdef WASM
 void qak_print_struct_offsets();

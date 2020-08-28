@@ -46,7 +46,8 @@ void testTokenizer() {
 
     for (uint32_t i = 0; i < tokens.size(); i++) {
         Token &token = tokens[i];
-        printf("%s (%d:%d:%d): %s\n", tokenizer::tokenTypeToString(token.type), token.startLine, token.start, token.end, token.toCString(mem));
+        printf("%s (%d:%d:%d): %s\n", tokenizer::tokenTypeToString(token.type), token.startLine, token.start, token.end,
+               token.toCString(mem));
     }
 }
 

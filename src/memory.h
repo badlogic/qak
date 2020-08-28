@@ -35,7 +35,8 @@ namespace qak {
 
         Allocation() : address(nullptr), size(0), fileName(nullptr), line(0) {}
 
-        Allocation(void *address, size_t size, const char *file, int32_t line) : address(address), size(size), fileName(file), line(line) {}
+        Allocation(void *address, size_t size, const char *file, int32_t line) : address(address), size(size),
+                                                                                 fileName(file), line(line) {}
     };
 
     class HeapAllocator {
@@ -116,7 +117,8 @@ namespace qak {
                 _allocations.erase(ptr);
                 _totalFrees++;
             } else {
-                printf("%s:%i (address %p): Double free or not allocated through qak::memory\n", file, line, (void *) ptr);
+                printf("%s:%i (address %p): Double free or not allocated through qak::memory\n", file, line,
+                       (void *) ptr);
             }
         }
 
@@ -124,7 +126,8 @@ namespace qak {
             if (_allocations.size() > 0) {
                 uint64_t totalSize = 0;
                 for (std::map<void *, Allocation>::iterator it = _allocations.begin(); it != _allocations.end(); it++) {
-                    printf("%s:%i (%zu bytes at %p)\n", it->second.fileName, it->second.line, it->second.size, it->second.address);
+                    printf("%s:%i (%zu bytes at %p)\n", it->second.fileName, it->second.line, it->second.size,
+                           it->second.address);
                     totalSize += it->second.size;
                 }
                 printf("Total memory: %llu, #allocations: %zu\n", (unsigned long long) totalSize, _allocations.size());

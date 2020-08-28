@@ -203,6 +203,6 @@ int main(int argc, char **argv) {
     generateLiteralToTokenArray();
     testTokenizer();
     testErrors();
-    testBench();
+    // testBench();
     return 0;
 }

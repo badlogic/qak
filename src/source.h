@@ -74,7 +74,9 @@ namespace qak {
         /* The size of the data in bytes. */
         size_t size;
 
-        Source(HeapAllocator &mem, const char *fileName, uint8_t *data, size_t size) : _lines(mem), mem(mem), fileName(fileName), data(data), size(size) {
+        Source(HeapAllocator &mem, const char *fileName, uint8_t *data, size_t size) : _lines(mem), mem(mem),
+                                                                                       fileName(fileName), data(data),
+                                                                                       size(size) {
         }
 
         ~Source() {

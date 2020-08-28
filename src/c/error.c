@@ -13,14 +13,15 @@ void qak_error_print(qak_error *error) {
     qak_source_get_lines(source);
     qak_line *line = &source->lines[error->span.startLine];
 
-    printf("Error (%.*s:%i): %.*s\n", (int) source->fileName.length, source->fileName.data, line->lineNumber, (int) error->errorMessage.length,
+    printf("Error (%.*s:%i): %.*s\n", (int) source->fileName.length, source->fileName.data, line->lineNumber,
+           (int) error->errorMessage.length,
            error->errorMessage.data);
 
     if (line->data.length > 0) {
         printf("%.*s\n", (int) line->data.length, line->data.data);
-        int32_t errorStart = (int32_t)(error->span.data.data - line->data.data);
-        int32_t errorEnd = errorStart + (int32_t)error->span.data.length - 1;
-        for (int32_t i = 0, n = (int32_t)line->data.length; i < n; i++) {
+        int32_t errorStart = (int32_t) (error->span.data.data - line->data.data);
+        int32_t errorEnd = errorStart + (int32_t) error->span.data.length - 1;
+        for (int32_t i = 0, n = (int32_t) line->data.length; i < n; i++) {
             bool useTab = line->data.data[i] == '\t';
             printf("%s", i >= errorStart && i <= errorEnd ? "^" : (useTab ? "\t" : " "));
         }

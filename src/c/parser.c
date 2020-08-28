@@ -3,8 +3,6 @@
 #include "tokenizer.h"
 #include "error.h"
 
-QAK_ARRAY_IMPLEMENT_INLINE(qak_array_line, qak_line)
-
 typedef struct qak_token_stream {
     qak_source *source;
     qak_array_token *tokens;
@@ -20,7 +18,8 @@ typedef struct qak_parser {
     qak_allocator *nodeAllocator;
 } qak_parser;
 
-QAK_INLINE void token_stream_init(qak_token_stream *stream, qak_source *source, qak_array_token *tokens, qak_errors *errors) {
+QAK_INLINE void
+token_stream_init(qak_token_stream *stream, qak_source *source, qak_array_token *tokens, qak_errors *errors) {
     stream->source = source;
     stream->tokens = tokens;
     stream->errors = errors;
@@ -76,7 +75,8 @@ QAK_INLINE qak_token *expect(qak_token_stream *stream, qak_token_type type) {
             qak_line *lastLine = &stream->source->lines[stream->source->numLines - 1];
             qak_span span = (qak_span) {lastLine->data, lastLine->lineNumber, lastLine->lineNumber};
             const char *typeString = qak_token_type_to_string(type);
-            qak_errors_add(stream->errors, stream->source, span, "Expected '%s', but reached the end of the source.", typeString);
+            qak_errors_add(stream->errors, stream->source, span, "Expected '%s', but reached the end of the source.",
+                           typeString);
         } else {
             const char *typeString = qak_token_type_to_string(type);
             qak_errors_add(stream->errors, stream->source, lastToken->span, "Expected '%s', but got '%.*s'", typeString,
@@ -99,9 +99,11 @@ QAK_INLINE qak_token *expect_string(qak_token_stream *stream, const char *text, 
             qak_source_get_lines(stream->source);
             qak_line *lastLine = &stream->source->lines[stream->source->numLines - 1];
             qak_span span = (qak_span) {lastLine->data, lastLine->lineNumber, lastLine->lineNumber};
-            qak_errors_add(stream->errors, stream->source, span, "Expected '%.*s', but reached the end of the source.", len, text);
+            qak_errors_add(stream->errors, stream->source, span, "Expected '%.*s', but reached the end of the source.",
+                           len, text);
         } else {
-            qak_errors_add(stream->errors, stream->source, lastToken->span, "Expected '%.*s', but got '%.*s'", len, text,
+            qak_errors_add(stream->errors, stream->source, lastToken->span, "Expected '%.*s', but got '%.*s'", len,
+                           text,
                            lastToken->span.data.length, lastToken->span.data.data);
         }
         return NULL;
@@ -129,43 +131,186 @@ QAK_INLINE qak_ast_node *new_ast_node_2(qak_parser *parser, qak_ast_type type, q
     return node;
 }
 
-qak_ast_node *parse_module(qak_parser *parser);
-
-qak_ast_node *parse_function(qak_parser *parser);
-
-qak_ast_node *parse_parameter(qak_parser *parser);
-
-bool parse_parameters(qak_parser *parser, qak_ast_node **parametersHead, uint32_t *numParameters);
-
-qak_ast_node *parse_type_specifier(qak_parser *parser);
+qak_ast_node *parse_expression(qak_parser *parser);
 
 qak_ast_node *parse_statement(qak_parser *parser);
 
-qak_ast_node *parse_variable(qak_parser *parser);
+qak_ast_node *parse_type_specifier(qak_parser *parser) {
+    qak_token_stream *stream = &parser->stream;
+    qak_token *name = expect(stream, QakTokenIdentifier);
+    if (!name) return NULL;
 
-qak_ast_node *parse_while(qak_parser *parser);
+    qak_ast_node *type = new_ast_node(parser, QakAstTypeSpecifier, &name->span);
+    type->data.typeSpecifier.name = name->span;
+    return type;
+}
 
-qak_ast_node *parse_if(qak_parser *parser);
+qak_ast_node *parse_access_or_call(qak_parser *parser) {
+    qak_token_stream *stream = &parser->stream;
+    qak_token *name = expect(stream, QakTokenIdentifier);
+    if (!name) return NULL;
 
-qak_ast_node *parse_return(qak_parser *parser);
+    qak_ast_node *result = new_ast_node(parser, QakAstVariableAccess, &name->span);
+    result->data.variableAccess.name = name->span;
 
-qak_ast_node *parse_expression(qak_parser *parser);
+    // If the next token is "(", we have a function call.
+    if (match(stream, QakTokenLeftParenthesis, true)) {
+        // BOZO
+        /*ArrayPoolMonitor<Expression *> expressionArrays(_expressionArrayPool);
+        Array<Expression *> *arguments = parseArguments(expressionArrays.obtain(QAK_SRC_LOC));
+        if (!arguments) return nullptr;
 
-qak_ast_node *parse_module(qak_parser *parser) {
-    qak_token *moduleKeyword = expect_string(&parser->stream, QAK_STR("module"));
-    if (!moduleKeyword) return NULL;
+        qak_token *closingParan = expect(stream, QakTokenRightParenthesis);
+        if (!closingParan) return NULL;
 
-    qak_token *moduleName = expect(&parser->stream, QakTokenIdentifier);
-    if (!moduleName) return NULL;
+        result = _bumpMem->allocObject<FunctionCall>(*_bumpMem, *name, *closingParan, result, *arguments);*/
+    }
+    return result;
+}
 
-    qak_ast_node *module = new_ast_node(parser, QakAstModule, &moduleName->span);
-    module->data.module.name = moduleName->span;
-    module->data.module.numStatements = 0;
-    module->data.module.statements = NULL;
-    module->data.module.numFunctions = 0;
-    module->data.module.functions = NULL;
+qak_ast_node *parse_access_or_call_or_literal(qak_parser *parser) {
+    qak_token_stream *stream = &parser->stream;
+    if (!has_more(stream)) {
+        if (parser->tokens->size > 0) {
+            qak_token *token = &parser->tokens->items[parser->tokens->size - 1];
+            qak_errors_add(parser->errors, parser->source, token->span,
+                           "Expected a variable, field, array, function call, method call, or literal.");
+        } else {
+            qak_errors_add(parser->errors, parser->source, (qak_span) {{NULL, 0}, 0, 0},
+                           "Expected a variable, field, array, function call, method call, or literal.");
+        }
+        return NULL;
+    }
 
-    return module;
+    qak_token_type tokenType = peek(stream)->type;
+
+    switch (tokenType) {
+        case QakTokenStringLiteral:
+        case QakTokenBooleanLiteral:
+        case QakTokenDoubleLiteral:
+        case QakTokenFloatLiteral:
+        case QakTokenByteLiteral:
+        case QakTokenShortLiteral:
+        case QakTokenIntegerLiteral:
+        case QakTokenLongLiteral:
+        case QakTokenCharacterLiteral:
+        case QakTokenNothingLiteral: {
+            qak_token *token = consume(stream);
+            qak_ast_node *literal = new_ast_node(parser, QakAstLiteral, &token->span);
+            literal->data.literal.type = tokenType;
+            literal->data.literal.value = token->span;
+            return literal;
+        }
+
+        case QakTokenIdentifier:
+            return parse_access_or_call(parser);
+
+        default:
+            qak_errors_add(parser->errors, parser->source, peek(stream)->span,
+                           "Expected a variable, field, array, function call, method call, or literal.");
+            return NULL;
+    }
+}
+
+static qak_token_type unaryOperators[] = {QakTokenNot,
+                                          QakTokenPlus,
+                                          QakTokenMinus,
+                                          QakTokenUnknown};
+
+qak_ast_node *parse_unary_operator(qak_parser *parser) {
+    qak_token_stream *stream = &parser->stream;
+    qak_token_type *op = unaryOperators;
+    while (*op != QakTokenUnknown) {
+        if (match(stream, *op, false)) break;
+        op++;
+    }
+    if (*op != QakTokenUnknown) {
+        qak_token *op = consume(stream);
+        qak_ast_node *expression = parse_unary_operator(parser);
+        if (!expression) return NULL;
+        qak_ast_node *operation = new_ast_node(parser, QakAstUnaryOperation, &op->span);
+        operation->data.unaryOperation.op = op->span;
+        operation->data.unaryOperation.opType = op->type;
+        operation->data.unaryOperation.value = expression;
+        return operation;
+    } else {
+        if (match(stream, QakTokenLeftParenthesis, true)) {
+            qak_ast_node *expression = parse_expression(parser);
+            if (!expression) return NULL;
+            if (!expect(stream, QakTokenRightParenthesis)) return NULL;
+            return expression;
+        } else {
+            return parse_access_or_call_or_literal(parser);
+        }
+    }
+    return NULL;
+}
+
+#define OPERATOR_NUM_GROUPS 6
+static qak_token_type binaryOperators[OPERATOR_NUM_GROUPS][5] = {
+        {QakTokenAssignment,   QakTokenUnknown},
+        {QakTokenOr,           QakTokenAnd,       QakTokenXor,        QakTokenUnknown},
+        {QakTokenEqual,        QakTokenNotEqual,  QakTokenUnknown},
+        {QakTokenLess,         QakTokenLessEqual, QakTokenGreater,    QakTokenGreaterEqual, QakTokenUnknown},
+        {QakTokenPlus,         QakTokenMinus,     QakTokenUnknown},
+        {QakTokenForwardSlash, QakTokenAsterisk,  QakTokenPercentage, QakTokenUnknown}
+};
+
+qak_ast_node *parse_binary_operator(qak_parser *parser, uint32_t level) {
+    uint32_t nextLevel = level + 1;
+
+    qak_ast_node *left =
+            nextLevel == OPERATOR_NUM_GROUPS ? parse_unary_operator(parser) : parse_binary_operator(parser, nextLevel);
+    if (!left) return NULL;
+
+    qak_token_stream *stream = &parser->stream;
+    while (has_more(stream)) {
+        qak_token_type *op = binaryOperators[level];
+        while (*op != QakTokenUnknown) {
+            if (match(stream, *op, false)) break;
+            op++;
+        }
+        if (*op == QakTokenUnknown) break;
+
+        qak_token *opToken = consume(stream);
+        qak_ast_node *right =
+                nextLevel == OPERATOR_NUM_GROUPS ? parse_unary_operator(parser) : parse_binary_operator(parser,
+                                                                                                        nextLevel);
+        if (right == NULL) return NULL;
+
+        left = new_ast_node_2(parser, QakAstBinaryOperation, &left->span, &right->span);
+        left->data.binaryOperation.op = opToken->span;
+        left->data.binaryOperation.opType = *op;
+        left->data.binaryOperation.left = left;
+        left->data.binaryOperation.right = right;
+    }
+    return left;
+}
+
+qak_ast_node *parse_ternary_operator(qak_parser *parser) {
+    qak_token_stream *stream = &parser->stream;
+    qak_ast_node *condition = parse_binary_operator(parser, 0);
+    if (!condition) return NULL;
+
+    if (match(stream, QakTokenQuestionMark, true)) {
+        qak_ast_node *trueValue = parse_ternary_operator(parser);
+        if (!trueValue) return NULL;
+        if (!match(stream, QakTokenColon, true)) return NULL;
+        qak_ast_node *falseValue = parse_ternary_operator(parser);
+        if (!falseValue) return NULL;
+
+        qak_ast_node *ternary = new_ast_node_2(parser, QakAstTernaryOperation, &condition->span, &falseValue->span);
+        ternary->data.ternaryOperation.condition = condition;
+        ternary->data.ternaryOperation.trueValue = trueValue;
+        ternary->data.ternaryOperation.falseValue = falseValue;
+        return ternary;
+    } else {
+        return condition;
+    }
+}
+
+qak_ast_node *parse_expression(qak_parser *parser) {
+    return parse_ternary_operator(parser);
 }
 
 qak_ast_node *parse_parameter(qak_parser *parser) {
@@ -205,16 +350,6 @@ bool parse_parameters(qak_parser *parser, qak_ast_node **parametersHead, uint32_
     }
 
     return expect(stream, QakTokenRightParenthesis);
-}
-
-qak_ast_node *parse_type_specifier(qak_parser *parser) {
-    qak_token_stream *stream = &parser->stream;
-    qak_token *name = expect(stream, QakTokenIdentifier);
-    if (!name) return NULL;
-
-    qak_ast_node *type = new_ast_node(parser, QakAstTypeSpecifier, &name->span);
-    type->data.typeSpecifier.name = name->span;
-    return type;
 }
 
 qak_ast_node *parse_function(qak_parser *parser) {
@@ -263,7 +398,7 @@ qak_ast_node *parse_function(qak_parser *parser) {
 
 qak_ast_node *parse_variable(qak_parser *parser) {
     qak_token_stream *stream = &parser->stream;
-    expect_string(stream,QAK_STR("var"));
+    expect_string(stream, QAK_STR("var"));
 
     qak_token *name = expect(stream, QakTokenIdentifier);
     if (!name) return NULL;
@@ -299,10 +434,6 @@ qak_ast_node *parse_return(qak_parser *parser) {
     return NULL;
 }
 
-qak_ast_node *parse_expression(qak_parser *parser) {
-    return NULL;
-}
-
 qak_ast_node *parse_statement(qak_parser *parser) {
     qak_token_stream *stream = &parser->stream;
     if (match_string(stream, QAK_STR("var"), false)) {
@@ -311,11 +442,28 @@ qak_ast_node *parse_statement(qak_parser *parser) {
         return parse_while(parser);
     } else if (match_string(stream, QAK_STR("if"), false)) {
         return parse_if(parser);
-    } else if (match_string(stream,QAK_STR("return"), false)) {
+    } else if (match_string(stream, QAK_STR("return"), false)) {
         return parse_return(parser);
     } else {
         return parse_expression(parser);
     }
+}
+
+static qak_ast_node *parse_module(qak_parser *parser) {
+    qak_token *moduleKeyword = expect_string(&parser->stream, QAK_STR("module"));
+    if (!moduleKeyword) return NULL;
+
+    qak_token *moduleName = expect(&parser->stream, QakTokenIdentifier);
+    if (!moduleName) return NULL;
+
+    qak_ast_node *module = new_ast_node(parser, QakAstModule, &moduleName->span);
+    module->data.module.name = moduleName->span;
+    module->data.module.numStatements = 0;
+    module->data.module.statements = NULL;
+    module->data.module.numFunctions = 0;
+    module->data.module.functions = NULL;
+
+    return module;
 }
 
 qak_ast_node *qak_parse(qak_source *source, qak_array_token *tokens, qak_errors *errors, qak_allocator *nodeAllocator) {
@@ -324,7 +472,6 @@ qak_ast_node *qak_parse(qak_source *source, qak_array_token *tokens, qak_errors 
     parser.tokens = tokens;
     parser.errors = errors;
     parser.nodeAllocator = nodeAllocator;
-    token_stream_init(&parser.stream, source, tokens, errors);
 
     qak_array_token_clear(parser.tokens);
     qak_tokenize(source, parser.tokens, errors);
@@ -335,9 +482,9 @@ qak_ast_node *qak_parse(qak_source *source, qak_array_token *tokens, qak_errors 
     if (!module) return NULL;
 
     qak_token_stream *stream = &parser.stream;
-    qak_ast_node* lastFunction = NULL;
+    qak_ast_node *lastFunction = NULL;
     uint32_t numFunctions = 0;
-    qak_ast_node* lastStatement = NULL;
+    qak_ast_node *lastStatement = NULL;
     uint32_t numStatements = 0;
     while (has_more(stream)) {
         if (match_string(stream, QAK_STR("function"), true)) {

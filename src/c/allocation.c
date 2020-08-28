@@ -4,7 +4,8 @@
 #include <stdio.h>
 
 static void *heap_allocate(qak_allocator *self, size_t numBytes, const char *sourceFile, uint32_t line) {
-    qak_heap_allocation_header *header = (qak_heap_allocation_header *) malloc(sizeof(qak_heap_allocation_header) + numBytes);
+    qak_heap_allocation_header *header = (qak_heap_allocation_header *) malloc(
+            sizeof(qak_heap_allocation_header) + numBytes);
     header->numBytes = numBytes;
     header->sourceFile = sourceFile;
     header->line = line;
@@ -16,7 +17,8 @@ static void *heap_allocate(qak_allocator *self, size_t numBytes, const char *sou
 }
 
 static void *heap_reallocate(qak_allocator *self, void *ptr, size_t numBytes, const char *sourceFile, uint32_t line) {
-    qak_heap_allocation_header *header = (qak_heap_allocation_header *) ((uint8_t *) ptr - sizeof(qak_heap_allocation_header));
+    qak_heap_allocation_header *header = (qak_heap_allocation_header *) ((uint8_t *) ptr -
+                                                                         sizeof(qak_heap_allocation_header));
     qak_heap_allocation_header *originalHeader = header;
     header = realloc(header, sizeof(qak_heap_allocation_header) + numBytes);
     header->numBytes = numBytes;
@@ -31,7 +33,8 @@ static void *heap_reallocate(qak_allocator *self, void *ptr, size_t numBytes, co
 static void heap_free(qak_allocator *self, void *ptr, const char *sourceFile, uint32_t line) {
     QAK_UNUSED(sourceFile);
     QAK_UNUSED(line);
-    qak_heap_allocation_header *header = (qak_heap_allocation_header *) ((uint8_t *) ptr - sizeof(qak_heap_allocation_header));
+    qak_heap_allocation_header *header = (qak_heap_allocation_header *) ((uint8_t *) ptr -
+                                                                         sizeof(qak_heap_allocation_header));
     if (header->prev) header->prev->next = header->next;
     if (header->next) header->next->prev = header->prev;
     if (self->data == header) self->data = header->next;
@@ -151,7 +154,7 @@ static void bump_print(qak_allocator *self) {
     qak_bump_allocator_data *data = ((qak_bump_allocator_data *) self->data);
     qak_bump_block_header *block = data->head;
     while (block) {
-        printf("block %p, total: %zu, allocated: %zu\n", (void*)block->base, block->numBytes, block->allocatedBytes);
+        printf("block %p, total: %zu, allocated: %zu\n", (void *) block->base, block->numBytes, block->allocatedBytes);
         block = block->next;
     }
 }
