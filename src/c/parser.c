@@ -112,16 +112,16 @@ QAK_INLINE qak_token *expect_string(qak_token_stream *stream, const char *text, 
     }
 }
 
-QAK_INLINE qak_ast_node *new_ast_node(qak_parser *parser, qak_ast_type type, qak_span *span) {
-    qak_ast_node *node = QAK_ALLOCATE(parser->nodeAllocator, qak_ast_node, 1);
+QAK_INLINE qak_ast_node *new_ast_node(qak_parser *parser, qak_ast_type type, size_t size, qak_span *span) {
+    qak_ast_node *node = (qak_ast_node *) QAK_ALLOCATE(parser->nodeAllocator, uint8_t, size);
     node->type = type;
     node->span = *span;
     node->next = NULL;
     return node;
 }
 
-QAK_INLINE qak_ast_node *new_ast_node_2(qak_parser *parser, qak_ast_type type, qak_span *start, qak_span *end) {
-    qak_ast_node *node = QAK_ALLOCATE(parser->nodeAllocator, qak_ast_node, 1);
+QAK_INLINE qak_ast_node *new_ast_node_2(qak_parser *parser, qak_ast_type type, size_t size, qak_span *start, qak_span *end) {
+    qak_ast_node *node = (qak_ast_node *) QAK_ALLOCATE(parser->nodeAllocator, uint8_t, size);
     node->type = type;
     node->span.data = start->data;
     node->span.data.length = end->data.data - start->data.data;
@@ -135,13 +135,13 @@ qak_ast_node *parse_expression(qak_parser *parser);
 
 qak_ast_node *parse_statement(qak_parser *parser);
 
-qak_ast_node *parse_type_specifier(qak_parser *parser) {
+qak_ast_type_specifier *parse_type_specifier(qak_parser *parser) {
     qak_token_stream *stream = &parser->stream;
     qak_token *name = expect(stream, QakTokenIdentifier);
     if (!name) return NULL;
 
-    qak_ast_node *type = new_ast_node(parser, QakAstTypeSpecifier, &name->span);
-    type->data.typeSpecifier.name = name->span;
+    qak_ast_type_specifier *type = (qak_ast_type_specifier *) new_ast_node(parser, QakAstTypeSpecifier, sizeof(qak_ast_type_specifier), &name->span);
+    type->name = name->span;
     return type;
 }
 
@@ -150,8 +150,8 @@ qak_ast_node *parse_access_or_call(qak_parser *parser) {
     qak_token *name = expect(stream, QakTokenIdentifier);
     if (!name) return NULL;
 
-    qak_ast_node *result = new_ast_node(parser, QakAstVariableAccess, &name->span);
-    result->data.variableAccess.name = name->span;
+    qak_ast_variable_access *result = (qak_ast_variable_access *) new_ast_node(parser, QakAstVariableAccess, sizeof(qak_ast_variable_access), &name->span);
+    result->name = name->span;
 
     // If the next token is "(", we have a function call.
     if (match(stream, QakTokenLeftParenthesis, true)) {
@@ -165,7 +165,7 @@ qak_ast_node *parse_access_or_call(qak_parser *parser) {
 
         result = _bumpMem->allocObject<FunctionCall>(*_bumpMem, *name, *closingParan, result, *arguments);*/
     }
-    return result;
+    return (qak_ast_node *) result;
 }
 
 qak_ast_node *parse_access_or_call_or_literal(qak_parser *parser) {
@@ -196,10 +196,10 @@ qak_ast_node *parse_access_or_call_or_literal(qak_parser *parser) {
         case QakTokenCharacterLiteral:
         case QakTokenNothingLiteral: {
             qak_token *token = consume(stream);
-            qak_ast_node *literal = new_ast_node(parser, QakAstLiteral, &token->span);
-            literal->data.literal.type = tokenType;
-            literal->data.literal.value = token->span;
-            return literal;
+            qak_ast_literal *literal = (qak_ast_literal *) new_ast_node(parser, QakAstLiteral, sizeof(qak_ast_literal), &token->span);
+            literal->type = tokenType;
+            literal->value = token->span;
+            return (qak_ast_node *) literal;
         }
 
         case QakTokenIdentifier:
@@ -228,11 +228,11 @@ qak_ast_node *parse_unary_operator(qak_parser *parser) {
         qak_token *op = consume(stream);
         qak_ast_node *expression = parse_unary_operator(parser);
         if (!expression) return NULL;
-        qak_ast_node *operation = new_ast_node(parser, QakAstUnaryOperation, &op->span);
-        operation->data.unaryOperation.op = op->span;
-        operation->data.unaryOperation.opType = op->type;
-        operation->data.unaryOperation.value = expression;
-        return operation;
+        qak_ast_unary_operation *operation = (qak_ast_unary_operation *) new_ast_node(parser, QakAstUnaryOperation, sizeof(qak_ast_unary_operation), &op->span);
+        operation->op = op->span;
+        operation->opType = op->type;
+        operation->value = expression;
+        return (qak_ast_node *) operation;
     } else {
         if (match(stream, QakTokenLeftParenthesis, true)) {
             qak_ast_node *expression = parse_expression(parser);
@@ -278,11 +278,12 @@ qak_ast_node *parse_binary_operator(qak_parser *parser, uint32_t level) {
                                                                                                         nextLevel);
         if (right == NULL) return NULL;
 
-        left = new_ast_node_2(parser, QakAstBinaryOperation, &left->span, &right->span);
-        left->data.binaryOperation.op = opToken->span;
-        left->data.binaryOperation.opType = *op;
-        left->data.binaryOperation.left = left;
-        left->data.binaryOperation.right = right;
+        left = new_ast_node_2(parser, QakAstBinaryOperation, sizeof(qak_ast_binary_operation), &left->span, &right->span);
+        qak_ast_binary_operation *binaryOp = (qak_ast_binary_operation *) left;
+        binaryOp->op = opToken->span;
+        binaryOp->opType = *op;
+        binaryOp->left = left;
+        binaryOp->right = right;
     }
     return left;
 }
@@ -299,11 +300,12 @@ qak_ast_node *parse_ternary_operator(qak_parser *parser) {
         qak_ast_node *falseValue = parse_ternary_operator(parser);
         if (!falseValue) return NULL;
 
-        qak_ast_node *ternary = new_ast_node_2(parser, QakAstTernaryOperation, &condition->span, &falseValue->span);
-        ternary->data.ternaryOperation.condition = condition;
-        ternary->data.ternaryOperation.trueValue = trueValue;
-        ternary->data.ternaryOperation.falseValue = falseValue;
-        return ternary;
+        qak_ast_ternary_operation *ternary = (qak_ast_ternary_operation *) new_ast_node_2(parser, QakAstTernaryOperation, sizeof(qak_ast_ternary_operation),
+                                                                                          &condition->span, &falseValue->span);
+        ternary->condition = condition;
+        ternary->trueValue = trueValue;
+        ternary->falseValue = falseValue;
+        return (qak_ast_node *) ternary;
     } else {
         return condition;
     }
@@ -313,35 +315,35 @@ qak_ast_node *parse_expression(qak_parser *parser) {
     return parse_ternary_operator(parser);
 }
 
-qak_ast_node *parse_parameter(qak_parser *parser) {
+qak_ast_parameter *parse_parameter(qak_parser *parser) {
     qak_token_stream *stream = &parser->stream;
 
     qak_token *name = consume(stream);
     if (!expect(stream, QakTokenColon)) return NULL;
 
-    qak_ast_node *type = parse_type_specifier(parser);
+    qak_ast_type_specifier *type = parse_type_specifier(parser);
     if (!type) return NULL;
 
-    qak_ast_node *parameter = new_ast_node_2(parser, QakAstParameter, &name->span, &type->span);
-    parameter->data.parameter.name = name->span;
-    parameter->data.parameter.typeSpecifier = type;
+    qak_ast_parameter *parameter = (qak_ast_parameter *) new_ast_node_2(parser, QakAstParameter, sizeof(qak_ast_parameter), &name->span, &type->info.span);
+    parameter->name = name->span;
+    parameter->typeSpecifier = type;
     return parameter;
 }
 
-bool parse_parameters(qak_parser *parser, qak_ast_node **parametersHead, uint32_t *numParameters) {
+bool parse_parameters(qak_parser *parser, qak_ast_parameter **parametersHead, uint32_t *numParameters) {
     qak_token_stream *stream = &parser->stream;
     if (!expect(stream, QakTokenLeftParenthesis)) return false;
 
-    qak_ast_node *lastParameter = NULL;
+    qak_ast_parameter *lastParameter = NULL;
     while (match(stream, QakTokenIdentifier, false)) {
-        qak_ast_node *parameter = parse_parameter(parser);
+        qak_ast_parameter *parameter = parse_parameter(parser);
         if (!parameter) return false;
 
         if (!*parametersHead) {
             *parametersHead = parameter;
             lastParameter = parameter;
         } else {
-            lastParameter->next = parameter;
+            lastParameter->info.next = (qak_ast_node *) parameter;
             lastParameter = parameter;
         }
         (*numParameters)++;
@@ -352,17 +354,17 @@ bool parse_parameters(qak_parser *parser, qak_ast_node **parametersHead, uint32_
     return expect(stream, QakTokenRightParenthesis);
 }
 
-qak_ast_node *parse_function(qak_parser *parser) {
+qak_ast_function *parse_function(qak_parser *parser) {
     qak_token_stream *stream = &parser->stream;
 
     qak_token *name = expect(stream, QakTokenIdentifier);
     if (!name) return NULL;
 
-    qak_ast_node *parametersHead = NULL;
+    qak_ast_parameter *parametersHead = NULL;
     uint32_t numParameters = 0;
     if (!parse_parameters(parser, &parametersHead, &numParameters)) return NULL;
 
-    qak_ast_node *returnType = NULL;
+    qak_ast_type_specifier *returnType = NULL;
     if (match(stream, QakTokenColon, true)) {
         returnType = parse_type_specifier(parser);
         if (!returnType) return NULL;
@@ -386,13 +388,13 @@ qak_ast_node *parse_function(qak_parser *parser) {
 
     if (!expect_string(stream, QAK_STR("end"))) return NULL;
 
-    qak_ast_node *function = new_ast_node(parser, QakAstFunction, &name->span);
-    function->data.function.name = name->span;
-    function->data.function.returnType = returnType;
-    function->data.function.parameters = parametersHead;
-    function->data.function.numParameters = numParameters;
-    function->data.function.statements = statementsHead;
-    function->data.function.numStatements = numStatements;
+    qak_ast_function *function = (qak_ast_function *) new_ast_node(parser, QakAstFunction, sizeof(qak_ast_function), &name->span);
+    function->name = name->span;
+    function->returnType = returnType;
+    function->parameters = parametersHead;
+    function->numParameters = numParameters;
+    function->statements = statementsHead;
+    function->numStatements = numStatements;
     return function;
 }
 
@@ -403,7 +405,7 @@ qak_ast_node *parse_variable(qak_parser *parser) {
     qak_token *name = expect(stream, QakTokenIdentifier);
     if (!name) return NULL;
 
-    qak_ast_node *type = NULL;
+    qak_ast_type_specifier *type = NULL;
     if (match(stream, QakTokenColon, true)) {
         type = parse_type_specifier(parser);
         if (!type) return NULL;
@@ -415,11 +417,11 @@ qak_ast_node *parse_variable(qak_parser *parser) {
         if (!expression) return NULL;
     }
 
-    qak_ast_node *variable = new_ast_node(parser, QakAstVariable, &name->span);
-    variable->data.variable.name = name->span;
-    variable->data.variable.typeSpecifier = type;
-    variable->data.variable.initializerExpression = expression;
-    return variable;
+    qak_ast_variable *variable = (qak_ast_variable *) new_ast_node(parser, QakAstVariable, sizeof(qak_ast_variable), &name->span);
+    variable->name = name->span;
+    variable->typeSpecifier = type;
+    variable->initializerExpression = expression;
+    return (qak_ast_node *) variable;
 }
 
 qak_ast_node *parse_while(qak_parser *parser) {
@@ -456,17 +458,17 @@ static qak_ast_node *parse_module(qak_parser *parser) {
     qak_token *moduleName = expect(&parser->stream, QakTokenIdentifier);
     if (!moduleName) return NULL;
 
-    qak_ast_node *module = new_ast_node(parser, QakAstModule, &moduleName->span);
-    module->data.module.name = moduleName->span;
-    module->data.module.numStatements = 0;
-    module->data.module.statements = NULL;
-    module->data.module.numFunctions = 0;
-    module->data.module.functions = NULL;
+    qak_ast_module *module = (qak_ast_module *) new_ast_node(parser, QakAstModule, sizeof(qak_ast_module), &moduleName->span);
+    module->name = moduleName->span;
+    module->numStatements = 0;
+    module->statements = NULL;
+    module->numFunctions = 0;
+    module->functions = NULL;
 
-    return module;
+    return (qak_ast_node *) module;
 }
 
-qak_ast_node *qak_parse(qak_source *source, qak_array_token *tokens, qak_errors *errors, qak_allocator *nodeAllocator) {
+qak_ast_module *qak_parse(qak_source *source, qak_array_token *tokens, qak_errors *errors, qak_allocator *nodeAllocator) {
     qak_parser parser;
     parser.source = source;
     parser.tokens = tokens;
@@ -478,24 +480,24 @@ qak_ast_node *qak_parse(qak_source *source, qak_array_token *tokens, qak_errors 
     if (errors->errors->size) return NULL;
     token_stream_init(&parser.stream, source, tokens, errors);
 
-    qak_ast_node *module = parse_module(&parser);
+    qak_ast_module *module = (qak_ast_module *) parse_module(&parser);
     if (!module) return NULL;
 
     qak_token_stream *stream = &parser.stream;
-    qak_ast_node *lastFunction = NULL;
+    qak_ast_function *lastFunction = NULL;
     uint32_t numFunctions = 0;
     qak_ast_node *lastStatement = NULL;
     uint32_t numStatements = 0;
     while (has_more(stream)) {
         if (match_string(stream, QAK_STR("function"), true)) {
-            qak_ast_node *function = parse_function(&parser);
+            qak_ast_function *function = parse_function(&parser);
             if (!function) return NULL;
 
-            if (!module->data.module.functions) {
-                module->data.module.functions = function;
+            if (!module->functions) {
+                module->functions = function;
                 lastFunction = function;
             } else {
-                lastFunction->next = function;
+                lastFunction->info.next = (qak_ast_node *) function;
                 lastFunction = function;
             }
             numFunctions++;
@@ -503,8 +505,8 @@ qak_ast_node *qak_parse(qak_source *source, qak_array_token *tokens, qak_errors 
             qak_ast_node *statement = parse_statement(&parser);
             if (!statement) return NULL;
 
-            if (!module->data.module.statements) {
-                module->data.module.statements = statement;
+            if (!module->statements) {
+                module->statements = statement;
                 lastStatement = statement;
             } else {
                 lastStatement->next = statement;
@@ -514,8 +516,8 @@ qak_ast_node *qak_parse(qak_source *source, qak_array_token *tokens, qak_errors 
         }
     }
 
-    module->data.module.numFunctions = numFunctions;
-    module->data.module.numStatements = numStatements;
+    module->numFunctions = numFunctions;
+    module->numStatements = numStatements;
 
     return module;
 }

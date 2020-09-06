@@ -160,3 +160,21 @@
     QAK_INLINE itemType name##_peek(name* self) { \
         return self->items[self->size - 1]; \
     }
+
+#define QAK_ARRAY_IMPLEMENT_MINIMAL_INLINE(name, itemType) \
+    typedef struct name { qak_allocator *allocator; size_t size; size_t capacity; itemType* items; } name; \
+    QAK_INLINE name* name##_new(qak_allocator *allocator, size_t initialCapacity) { \
+        name* array = (name *)allocator->allocate(allocator, sizeof(name), __FILE__, __LINE__); \
+        array->size = 0; \
+        array->capacity = initialCapacity; \
+        array->items = (itemType*)allocator->allocate(allocator, sizeof(itemType) * initialCapacity, __FILE__, __LINE__); \
+        array->allocator = allocator; \
+        return array; \
+    } \
+    QAK_INLINE void name##_add(name* self, itemType value) { \
+        if (self->size == self->capacity) { \
+            self->capacity = QAK_MAX(8, (size_t)(self->size * 1.75f)); \
+            self->items = (itemType*)self->allocator->reallocate(self->allocator, self->items, sizeof(itemType) * self->capacity, __FILE__, __LINE__); \
+        } \
+        self->items[self->size++] = value; \
+    }

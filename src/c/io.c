@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 
-QAK_ARRAY_IMPLEMENT_INLINE(qak_array_line, qak_line)
+QAK_ARRAY_IMPLEMENT_MINIMAL_INLINE(qak_array_line, qak_line)
 
 qak_source *qak_io_read_source_from_file(qak_allocator *allocator, const char *fileName) {
     FILE *file = fopen(fileName, "rb");

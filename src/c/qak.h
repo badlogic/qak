@@ -99,39 +99,49 @@ typedef enum qak_ast_type {
     QakAstModule
 } qak_ast_type;
 
-struct qak_ast_node;
+typedef struct qak_ast_node {
+    qak_ast_type type;
+    qak_span span;
+    struct qak_ast_node *next;
+} qak_ast_node;
 
 typedef struct qak_ast_type_specifier {
+    qak_ast_node info;
     qak_span name;
 } qak_ast_type_specifier;
 
 typedef struct qak_ast_parameter {
+    qak_ast_node info;
     qak_span name;
-    struct qak_ast_node *typeSpecifier;
+    struct qak_ast_type_specifier *typeSpecifier;
 } qak_ast_parameter;
 
 typedef struct qak_ast_function {
+    qak_ast_node info;
     qak_span name;
-    struct qak_ast_node *parameters;
+    struct qak_ast_parameter *parameters;
     uint32_t numParameters;
-    struct qak_ast_node *returnType;
+    struct qak_ast_type_specifier *returnType;
     struct qak_ast_node *statements;
     uint32_t numStatements;
 } qak_ast_function;
 
 typedef struct qak_ast_variable {
+    qak_ast_node info;
     qak_span name;
-    struct qak_ast_node *typeSpecifier;
+    struct qak_ast_type_specifier *typeSpecifier;
     struct qak_ast_node *initializerExpression;
 } qak_ast_variable;
 
 typedef struct qak_ast_while {
+    qak_ast_node info;
     struct qak_ast_node *condition;
     struct qak_ast_node *statements;
     uint32_t numStatements;
 } qak_ast_while;
 
 typedef struct qak_ast_if {
+    qak_ast_node info;
     struct qak_ast_node *condition;
     struct qak_ast_node *trueBlock;
     uint32_t numTrueBlockStatements;
@@ -140,16 +150,19 @@ typedef struct qak_ast_if {
 } qak_ast_if;
 
 typedef struct qak_ast_return {
+    qak_ast_node info;
     struct qak_ast_node *returnValue;
 } qak_ast_return;
 
 typedef struct qak_ast_ternary_operation {
+    qak_ast_node info;
     struct qak_ast_node *condition;
     struct qak_ast_node *trueValue;
     struct qak_ast_node *falseValue;
 } qak_ast_ternary_operation;
 
 typedef struct qak_ast_binary_operation {
+    qak_ast_node info;
     qak_span op;
     qak_token_type opType;
     struct qak_ast_node *left;
@@ -157,55 +170,38 @@ typedef struct qak_ast_binary_operation {
 } qak_ast_binary_operation;
 
 typedef struct qak_ast_unary_operation {
+    qak_ast_node info;
     qak_span op;
     qak_token_type opType;
     struct qak_ast_node *value;
 } qak_ast_unary_operation;
 
 typedef struct qak_ast_literal {
+    qak_ast_node info;
     qak_token_type type;
     qak_span value;
 } qak_ast_literal;
 
 typedef struct qak_ast_variable_access {
+    qak_ast_node info;
     qak_span name;
 } qak_ast_variable_access;
 
 typedef struct qak_ast_function_call {
+    qak_ast_node info;
     struct qak_ast_node *variableAccess;
     struct qak_ast_node *arguments;
     uint32_t numArguments;
 } qak_ast_function_call;
 
 typedef struct qak_ast_module {
+    qak_ast_node info;
     qak_span name;
-    struct qak_ast_node *functions;
+    struct qak_ast_function *functions;
     uint32_t numFunctions;
     struct qak_ast_node *statements;
     uint32_t numStatements;
 } qak_ast_module;
-
-typedef struct qak_ast_node {
-    qak_ast_type type;
-    qak_span span;
-    union {
-        qak_ast_type_specifier typeSpecifier;
-        qak_ast_parameter parameter;
-        qak_ast_function function;
-        qak_ast_variable variable;
-        qak_ast_while whileNode;
-        qak_ast_if ifNode;
-        qak_ast_return returnNode;
-        qak_ast_ternary_operation ternaryOperation;
-        qak_ast_binary_operation binaryOperation;
-        qak_ast_unary_operation unaryOperation;
-        qak_ast_literal literal;
-        qak_ast_variable_access variableAccess;
-        qak_ast_function_call functionCall;
-        qak_ast_module module;
-    } data;
-    struct qak_ast_node *next;
-} qak_ast_node;
 
 typedef struct qak_error {
     qak_source *source;
@@ -226,7 +222,7 @@ typedef struct qak_module {
     qak_allocator bumpMem;
     qak_array_token *tokens;
     qak_errors errors;
-    struct qak_ast_node *ast;
+    struct qak_ast_module *ast;
 } qak_module;
 
 /** Compiler **/
@@ -253,7 +249,7 @@ void qak_module_print_tokens(qak_module *module);
 
 struct qak_ast_node *qak_module_get_ast(qak_module *module);
 
-void qak_module_print_ast(qak_ast_node *moduleAst);
+void qak_module_print_ast(qak_ast_module *moduleAst);
 
 #ifdef WASM
 void qak_print_struct_offsets();

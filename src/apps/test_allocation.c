@@ -22,7 +22,7 @@ void testHeapAllocator() {
     QAK_CHECK(
             !strcmp(header->sourceFile + strlen(header->sourceFile) - strlen("test_allocation.c"), "test_allocation.c"),
             "Incorrect source file in allocation header.");
-    QAK_CHECK(header->line == 17, "Incorrect line in allocation header.");
+    QAK_CHECK(header->line == 18, "Incorrect line in allocation header.");
 
     uint8_t *alloc2 = QAK_ALLOCATE(&mem, uint8_t, 2);
     uint8_t *alloc3 = QAK_ALLOCATE(&mem, uint8_t, 3);
